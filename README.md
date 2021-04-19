@@ -14,5 +14,21 @@ Enter the virtual environment and install requirements
 
 Now you are good to go.
 
-## Module Flow
+## Python Profiling
 
+On Linux system install required libraries
+
+    sudo easy_install SquareMap RunSnakeRun
+
+and then run the program with profiler
+
+    python -m cProfile -o out.profile validation.py
+
+The logs can be visualized with
+
+    runsnake out.profile
+
+Reference:
+
+* [https://pythonspot.com/python-profiling/](https://pythonspot.com/python-profiling/)
+* [https://docs.python.org/3/library/profile.html](https://docs.python.org/3/library/profile.html)

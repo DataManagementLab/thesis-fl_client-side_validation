@@ -40,7 +40,7 @@ def vc(res):
     return "\U00002705" if res else "\U0000274C"
 
 def validate_buffer(buffer):
-    method = 'baseline'
+    method = 'freivald'
 
     for index, (data, target, model_state_dict, next_model_state_dict, optimizer_state_dict, loss, activations, gradients) in buffer.items():
         model = M(layers)
@@ -181,8 +181,8 @@ def validate_batch_freivald(data, target, activations, gradients, model, optimiz
     for key, val in activations.items():
         save_input[key] = torch.clone(data)
         layer = getattr(model, key)
-        # act_valid = freivald(data, layer.weight.T, val[0], bias=layer.bias, rtol=1e-05, atol=5e-06)
-        act_valid = baseline(data, layer.weight.T, val[0], bias=layer.bias, rtol=1e-05, atol=5e-06)
+        act_valid = freivald(data, layer.weight.T, val[0], bias=layer.bias, rtol=1e-05, atol=5e-06)
+        # act_valid = baseline(data, layer.weight.T, val[0], bias=layer.bias, rtol=1e-05, atol=5e-06)
         if verbose: print(f'    {vc(act_valid)} {key} (n: {val[0].shape[0]})')
         act_total &= act_valid
         data = F.relu(val[0])
@@ -216,8 +216,8 @@ def validate_batch_freivald(data, target, activations, gradients, model, optimiz
         grad_b = torch.sum(C_a, dim=0)
         grad_x = torch.mm(C_a, W)
 
-        # grad_valid = freivald(C_a.T, I, grad_Weight, atol=1e-06)
-        grad_valid = baseline(C_a.T, I, grad_Weight, atol=1e-06)
+        grad_valid = freivald(C_a.T, I, grad_Weight, atol=1e-06)
+        # grad_valid = baseline(C_a.T, I, grad_Weight, atol=1e-06)
         if verbose: print(f'    {vc(grad_valid)} {key} (n: {grad_Weight.shape[0]})')
 
         layer.weight.grad = grad_Weight
