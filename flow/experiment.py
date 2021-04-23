@@ -1,4 +1,5 @@
-from utils import ValidationSet
+from flow.utils import ValidationSet, register_activation_hooks, register_gradient_hooks
+from flow import validation
 
 class Experiment:
     def __init__(model, optimizer, loss, dataset, validation_method):
@@ -6,19 +7,26 @@ class Experiment:
         self.optimizer = optimizer
         self.loss = loss
         self.dataset = dataset
-        self.validation_method = validation_method
+        self.set_validation_method(validation_method)
 
         self.buffer = dict()
+    
+    def set_validation_method(validation_method):
+        assert hasattr(validation, validation_method)
+        self.validation_method = validation_method
+        self.validation_fn = getattr(validation, validation_method)
 
     def run(n_epochs, max_buffer_len=100):
-        model.train()
-
-        train_start_time = time.time()
+        self.model.train()
+        activations = register_activation_hooks(model)
+        gradients = register_gradient_hooks(model)
+        
+        train_buffer_start = time.time()
         for epoch in range(n_epochs):
             # monitor training loss
             train_loss = 0.0
-
-            train_batch_start = time.time()
+            batch_time_train = 0.0
+            batch_time_valid = 0.0
             
             for index, (data, target) in enumerate(train_loader):
                 # SAVE TO SET
@@ -28,53 +36,55 @@ class Experiment:
                 vset.set_optimizer(optimizer)
                 
                 # TRAINING
-                hooks, activations = register_activation_hooks(model)
                 optimizer.zero_grad()
                 output = model(data)
                 loss = loss_fn(output, target)
                 loss.backward()
                 optimizer.step()
-                
-                gradients = {key: getattr(model, key).weight.grad for key in activations.keys()}
+
+                for key in gradients.keys():
+                    l =  getattr(model, key)
+                    gradients[key].append(l.weight.grad)
+                    gradients[key].append(l.bias.grad)
 
                 # SAVE TO SET
                 vset.set_loss(loss)
                 vset.set_activations(activations)
                 vset.set_gradients(gradients)
                 vset.set_model_end(model)
-
                 buffer[index] = vset
 
-                activations = {key: list() for key in activations.keys()}
+                # EMPTY ACT & GRAD FOR NEXT BATCH
+                activations = defaultdict(list)
+                gradients = defaultdict(list)
                 
                 train_loss += loss.item()*data.size(0)
 
                 if len(buffer) >= max_buffer_len:
-                    train_batch_end = time.time()
+                    train_buffer_end = time.time()
                     
-                    gc.collect()
+                    gc.collect() # Free unused memory
                     
-                    validate_batch_start = time.time()
-                    validate_buffer(buffer)
-                    validate_batch_end = time.time()
+                    validate_buffer_start = time.time()
+                    self.validate(buffer)
+                    validate_buffer_end = time.time()
 
-                    info(f"Time\t{(train_batch_end - train_batch_start):.4f} training\t{(validate_batch_end - validate_batch_start):.4f} validation")
+                    train_buffer_time = train_batch_end - train_batch_start
+                    validate_buffer_time = validate_buffer_end - validate_buffer_start
+                    info(f"Time\t{train_buffer_time:.4f} training\t{validate_buffer_time:.4f} validation")
+
+                    batch_time_train += train_buffer_time
+                    batch_time_valid += validate_buffer_time
 
                     buffer = dict()
-                    gc.collect()
+                    gc.collect() # Free unused memory
                     train_batch_start = time.time()
                     break
-
-            if len(buffer) >= max_buffer_len:
-                validate_buffer(buffer)
-                buffer = dict()
             
             train_loss = train_loss/len(train_loader.dataset)
-            print('Epoch: {} \tTraining Loss: {:.6f}'.format(epoch+1, train_loss))
+            info('Epoch: {} \tTraining Loss: {:.6f}'.format(epoch+1, train_loss))
 
-        train_end_time = time.time()
-
-        print(f'Execution time: {(train_end_time - train_start_time):.4f} sec')
+            info(f"Epoch Times\t{train_buffer_time:.4f} training\t{validate_buffer_time:.4f} validation")
 
     def validate(buffer):
     for index, (data, target, model_state_dict, next_model_state_dict, optimizer_state_dict, loss, activations, gradients) in buffer.items():

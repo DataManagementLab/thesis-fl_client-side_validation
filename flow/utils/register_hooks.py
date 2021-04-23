@@ -10,7 +10,7 @@ def register_activation_hooks(model, module_types=[nn.Linear, nn.Conv2d]):
     def save_activation(name, model, input, output): 
         activations[name].append(output.detach())
 
-    for name, module in net.named_modules():
+    for name, module in model.named_modules():
         if type(module) in layer_types:
             module.register_forward_hook(partial(save_activation, name))
     
@@ -20,11 +20,11 @@ def register_activation_hooks(model, module_types=[nn.Linear, nn.Conv2d]):
 def register_gradient_hooks(model, module_types=[nn.Linear, nn.Conv2d]):
     gradients = defaultdict(list)
 
-    def save_gradients(name, model, grad_input, grad_output): 
-        activations[name].append(grad_input.detach())
+    def save_gradients(name, module, grad_input, grad_output): 
+        gradients[name].append(grad_input.clone())
 
-    for name, module in net.named_modules():
+    for name, module in model.named_modules():
         if type(module) in layer_types:
-            module.register_forward_hook(partial(save_activation, name))
+            module.register_full_backward_hook(partial(save_gradients, name))
     
     return gradients
