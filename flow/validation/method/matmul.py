@@ -1,5 +1,5 @@
 
-def baseline(A, B, C, bias=None, rtol=1e-05, atol=1e-08, details=True):
+def matmul(A, B, C, bias=None, rtol=1e-05, atol=1e-08, details=True):
     """
     Normal forward pass
     """
