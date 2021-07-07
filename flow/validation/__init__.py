@@ -1,2 +1,2 @@
-from .baseline import baseline
-from .freivald import freivald
+from .retrain import validate_retrain
+from .extract import validate_extract

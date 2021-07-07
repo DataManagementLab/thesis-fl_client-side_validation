@@ -1,6 +1,13 @@
-def validate_batch_freivald(data, target, activations, gradients, model, optimizer, loss, next_model, verbose=False, index=None):
+import torch
+import torch.nn.functional as F
+
+from flow.utils import vc
+
+def validate_extract(validation_method, data, target, activations, gradients, model, optimizer, loss, loss_fn, next_model, verbose=False, silent=False, index=None):
 
     optimizer.zero_grad()
+
+    verbose &= not silent
 
     # VALIDATE ACTIVATIONS
     save_input = dict()
@@ -10,8 +17,7 @@ def validate_batch_freivald(data, target, activations, gradients, model, optimiz
     for key, val in activations.items():
         save_input[key] = torch.clone(data)
         layer = getattr(model, key)
-        act_valid = freivald(data, layer.weight.T, val[0], bias=layer.bias, rtol=1e-05, atol=5e-06)
-        # act_valid = baseline(data, layer.weight.T, val[0], bias=layer.bias, rtol=1e-05, atol=5e-06)
+        act_valid = validation_method(data, layer.weight.T, val[0], bias=layer.bias, rtol=1e-05, atol=5e-06)
         if verbose: print(f'    {vc(act_valid)} {key} (n: {val[0].shape[0]})')
         act_total &= act_valid
         data = F.relu(val[0])
@@ -31,7 +37,9 @@ def validate_batch_freivald(data, target, activations, gradients, model, optimiz
     grad_total = True
     C = loss_input.grad.clone()
 
-    for key, val in reversed(list(gradients.items())) :
+    for key, val in list(gradients.items()) :
+
+        grad_x, grad_W, grad_b = val
 
         layer = getattr(model, key)
         W = layer.weight.clone()
@@ -39,17 +47,20 @@ def validate_batch_freivald(data, target, activations, gradients, model, optimiz
 
         I = save_input[key]
         A = activations[key][0]
-        C_a = (A > 0).float() * C
+        C_a = torch.mul(torch.gt(A, 0).float(), C)
 
-        grad_W = torch.mm(C_a.T, I)
-        grad_b = torch.sum(C_a, dim=0)
-        grad_x = torch.mm(C_a, W)
+        if grad_x is not None:
+            grad_x_valid = validation_method(C_a, W, grad_x, atol=1e-06)
+        else:
+            grad_x_valid = True
+        grad_W_valid = validation_method(C_a.T, I, grad_W, atol=1e-06)
+        grad_b_valid = torch.allclose(torch.sum(C_a, dim=0), grad_b, atol=1e-06)
 
-        grad_valid = freivald(C_a.T, I, val, atol=1e-06)
-        # grad_valid = baseline(C_a.T, I, val, atol=1e-06)
-        if verbose: print(f'    {vc(grad_valid)} {key} (n: {val.shape[0]})')
+        grad_valid = grad_x_valid and grad_W_valid and grad_b_valid
+        
+        if verbose: print(f'    {vc(grad_valid)} {key} (n: {val[1].shape[0]})')
 
-        layer.weight.grad = val
+        layer.weight.grad = grad_W
         layer.bias.grad = grad_b
 
         C = grad_x
@@ -72,7 +83,7 @@ def validate_batch_freivald(data, target, activations, gradients, model, optimiz
         weight_total &= W_valid & b_valid
 
     # PRINT RESULT SUMMARY
-    if False and not verbose: 
+    if not silent and not verbose: 
         if index: pass
         print(f'batch {index:04d}', end=' ')
         print(f'act: {vc(act_total)}; loss: {vc(loss_valid)}; grad: {vc(grad_total)}; weight: {vc(weight_total)}')

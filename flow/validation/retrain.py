@@ -1,10 +1,17 @@
+import torch
+import math
 
+from flow.utils import vc, register_activation_hooks, register_gradient_hooks
 
-def validate_batch_baseline(data, target, activations, gradients, model, optimizer, loss, next_model, verbose=False, index=None):
+def validate_retrain(data, target, activations, gradients, model, optimizer, loss, loss_fn, next_model, verbose=False, silent=False, index=None):
+
+    verbose &= not silent
 
     # PREPARE MODEL FOR TRAINING STEP
     model.train()
-    hooks_check, activations_check = register_activation_hooks(model)
+
+    activations_check = register_activation_hooks(model)
+    #gradients_check = register_gradient_hooks(model)
     
     # TRAIN THE MODEL
     optimizer.zero_grad()
@@ -39,7 +46,7 @@ def validate_batch_baseline(data, target, activations, gradients, model, optimiz
     grad_total = True
     gradients_check = {key: getattr(model, key).weight.grad for key in activations.keys()}
     for key, grad_check in gradients_check.items():
-        grad_diff = torch.mean(torch.abs(grad_check - gradients[key]))*100
+        grad_diff = torch.mean(torch.abs(grad_check - gradients[key][1]))*100
         grad_valid = grad_diff == 0.0
         grad_total &= grad_valid.item()
         if verbose: print('    {} {} [{}%]'.format(vc(grad_valid), key, grad_diff))
@@ -53,8 +60,8 @@ def validate_batch_baseline(data, target, activations, gradients, model, optimiz
         weight_total &= weight_valid.item()
         if verbose: print('    {} {}'.format(vc(weight_valid), l))
 
-    # if not verbose: 
-    #     if index: print(f'batch {index:04d}', end=' ')
-    #     print(f'act: {vc(act_total)}; loss: {vc(loss_valid)}; grad: {vc(grad_total)}; weights: {vc(weight_total)}')
+    if not silent and not verbose: 
+        if index is not None: print(f'batch {index:04d}', end=' ')
+        print(f'act: {vc(act_total)}; loss: {vc(loss_valid)}; grad: {vc(grad_total)}; weights: {vc(weight_total)}')
     
     if verbose: print()

@@ -209,8 +209,12 @@ def validate_batch_freivald(data, target, activations, gradients, model, optimiz
         b = layer.bias.clone()
 
         I = save_input[key]
+        print(key)
         A = activations[key][0]
+        print(A.shape, C.shape)
         C_a = (A > 0).float() * C
+
+        sys.exit()
 
         # grad_W = torch.mm(C_a.T, I)
         grad_b = torch.sum(C_a, dim=0)

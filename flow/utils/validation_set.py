@@ -1,10 +1,10 @@
+from copy import deepcopy
 
 class ValidationSet():
 
-    def __init__(self, epoch, batch, validation_method):
+    def __init__(self, epoch, batch):
         self.epoch = epoch
         self.batch = batch
-        self.validation_method = validation_method
         
         # Predefine Attributes
         self.data = self.target = self.model_start_state_dict = self.model_end_state_dict = self.optimizer_state_dict = self.activations = self.gradients = self.loss = None
@@ -34,9 +34,6 @@ class ValidationSet():
     def get_id(self):
         return self.epoch, self.batch
     
-    def get_validation_method(self):
-        return self.validation_method
-    
     def get_data(self):
         return self.data, self.target
     
@@ -57,6 +54,15 @@ class ValidationSet():
     
     def get_loss(self):
         return self.loss
+    
+    def get_dict(self):
+        return dict(
+            data=self.data,
+            target=self.target,
+            activations=self.activations,
+            gradients=self.gradients,
+            loss=self.loss
+        )
 
     def is_complete(self):
         complete = True
