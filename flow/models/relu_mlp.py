@@ -7,14 +7,19 @@ LAYER_PREFIX = 'layer'
 class ReLuMLP(nn.Module):
     def __init__(self, layers):
         super(ReLuMLP, self).__init__()
-        for i in range(len(layers)-1):
+
+        self.num_layers = len(layers)-1
+        for i in range(self.num_layers):
             setattr(self, f'{LAYER_PREFIX}{i+1}', nn.Linear(layers[i], layers[i+1], bias=True))
         
     def forward(self, x):
         x = x.view(-1, 28 * 28)
-        i = 1
-        while hasattr(self, f'{LAYER_PREFIX}{i}'):
-            x = F.relu(getattr(self, f'{LAYER_PREFIX}{i}')(x))
-            i += 1
+
+        for i in range(1, self.num_layers+1):
+            l = getattr(self, f'{LAYER_PREFIX}{i}')
+            if i == self.num_layers:
+                x = F.softmax(l(x), dim=1)
+            else:
+                x = F.relu(l(x))
             
         return x
