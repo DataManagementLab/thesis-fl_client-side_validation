@@ -1,0 +1,27 @@
+---
+log_dir: seminar
+plot_dir: summary_plots
+name: overall_accuracy_attack_types
+xlabel: epochs
+ylabel: accuracy
+ymin: 0
+ymax: 1
+grid: True
+data:
+- experiment: experiment_2021_09_11__12:28
+  class: 0
+  metric: overall_accuracy
+  label: targeted_attack
+- experiment: experiment_2021_09_11__12:40
+  class: 0
+  metric: overall_accuracy
+  label: untargeted_attack
+- experiment: experiment_2021_09_11__15:59 # experiment_2021_09_11__12:50
+  class: 0
+  metric: overall_accuracy
+  label: no_attack
+- experiment: experiment_2021_09_11__12:35
+  class: 0
+  metric: overall_accuracy
+  label: data_attack
+...
