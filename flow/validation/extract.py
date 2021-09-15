@@ -2,8 +2,11 @@ import torch
 import torch.nn.functional as F
 
 from flow.utils import vc
+import sys
 
-def validate_extract(validation_method, data, target, activations, gradients, model, optimizer, loss, loss_fn, next_model, verbose=False, silent=False, index=None):
+def validate_extract(validation_method, validation_set, model, optimizer, loss_fn, next_model, verbose=False, silent=False, index=None):
+
+    data, target, activations, gradients, loss = validation_set.get_dict().values()
 
     optimizer.zero_grad()
 
@@ -55,6 +58,10 @@ def validate_extract(validation_method, data, target, activations, gradients, mo
             grad_x_valid = True
         grad_W_valid = validation_method(C_a.T, I, grad_W, atol=1e-06)
         grad_b_valid = torch.allclose(torch.sum(C_a, dim=0), grad_b, atol=1e-06)
+
+        # if not grad_x_valid: print(f'Detected Epoch: {validation_set.epoch}, Batch: {validation_set.batch}, Weight: {key}.input')
+        # if not grad_W_valid: print(f'Detected Epoch: {validation_set.epoch}, Batch: {validation_set.batch}, Weight: {key}.weight')
+        # if not grad_b_valid: print(f'Detected Epoch: {validation_set.epoch}, Batch: {validation_set.batch}, Weight: {key}.bias')
 
         grad_valid = grad_x_valid and grad_W_valid and grad_b_valid
         
