@@ -17,7 +17,7 @@ class ReLuMLP(nn.Module):
 
         for i in range(1, self.num_layers+1):
             l = getattr(self, f'{LAYER_PREFIX}{i}')
-            if i == self.num_layers:
+            if False and i == self.num_layers:
                 x = F.softmax(l(x), dim=1)
             else:
                 x = F.relu(l(x))
