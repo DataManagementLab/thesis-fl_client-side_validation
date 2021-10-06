@@ -34,13 +34,23 @@ log.basicConfig(
 
 # MODULE IMPORTS
 from flow import training, validation, datasets, models
-from flow.utils import ValidationSet, Logger, register_activation_hooks, register_gradient_hooks, partial_class
+from flow.utils import ValidationSet, Logger, TimeTracker, register_activation_hooks, register_gradient_hooks, partial_class, load_config, time_tracker
 
 class Experiment:
+
+    TRAIN_METRICS = [
+        'loss',
+        'total_training',
+        'raw_training',
+        'total_validation',
+        'raw_validation'
+    ]
+
     def __init__(self, model_builder, optimizer_builder, loss_fn_builder, dataset, config_file, run_validation=True, **validation_args):
         self.model_builder = model_builder
         self.optimizer_builder = optimizer_builder
         self.loss_fn_builder = loss_fn_builder
+        self.time_tracker = TimeTracker()
 
         self.dataset = dataset
         self.config_file = config_file
@@ -55,15 +65,8 @@ class Experiment:
     @classmethod
     def from_config(cls, config_file: Path):
 
-        with open(config_file, 'r') as f:
-            config = yaml.load(f, Loader=yaml.Loader)
-
-        dataset_cnf = config['dataset']
-        model_cnf = config['model']
-        optimizer_cnf = config['optimizer']
-        loss_fn_cnf = config['loss_fn']
-        training_cnf = config['training']
-        validation_cnf = config['validation']
+        dataset_cnf, model_cnf, optimizer_cnf, loss_fn_cnf, training_cnf, validation_cnf = load_config(
+            config_file, 'dataset', 'model', 'optimizer', 'loss_fn', 'training', 'validation')
 
         # DATASET
         train_loader = getattr(datasets, 'get_dataloader_{}'.format(dataset_cnf['type']))(**dataset_cnf['params_train'])
@@ -83,9 +86,12 @@ class Experiment:
             loss_fn_builder, 
             train_loader, 
             config_file,
-            run_validation=validation_cnf['run_validation'],
-            validation_type=validation_cnf['validation_type'], 
-            validation_method=validation_cnf['validation_method'])
+            **validation_cnf)
+            # run_validation=validation_cnf['run_validation'],
+            # validation_type=validation_cnf['validation_type'], 
+            # validation_method=validation_cnf['validation_method'],
+            # verbose=validation_cnf['verbose'],
+            # silent=validation_cnf['silent'])
         
         if 'training_method' in training_cnf:
             log.info('Setting experiment training method to "{}"'.format(training_cnf['training_method']))
@@ -97,7 +103,7 @@ class Experiment:
         
         return exp
     
-    def set_validation_fn(self, validation_type, validation_method=''):
+    def set_validation_fn(self, validation_type, validation_method='', **validation_kwargs):
         SEPARATOR = '.'
 
         if validation_type == 'retrain':
@@ -109,7 +115,7 @@ class Experiment:
             validation_method_fn = getattr(validation.method, validation_method)
 
             self.validation_id = SEPARATOR.join((validation_type, validation_method))
-            self.validation_fn = partial(validation.validate_extract, validation_method_fn)
+            self.validation_fn = partial(validation.validate_extract, validation_method_fn, **validation_kwargs)
         else:
             log.error(f'Validation type {validation_type} is not supported.')
             return
@@ -126,10 +132,7 @@ class Experiment:
         self.init_model_optimizer_loss()
 
         self.buffer = dict()
-        self.set_total_time_training(0.0)
-        self.set_total_time_validation(0.0)
-        self.set_raw_time_training(0.0)
-        self.set_raw_time_validation(0.0)
+        self.time_tracker.clear()
     
     def init_model_optimizer_loss(self):
         self.model = self.model_builder()
@@ -149,26 +152,8 @@ class Experiment:
 
         logger = Logger(log_dir)
         logger.copy_config(self.config_file)
-
-        train_stats = [[
-            'epoch',
-            'loss',
-            'total_training',
-            'raw_training',
-            'total_validation',
-            'raw_validation'
-        ]]
-        logger.put_csv(logger.STATS_FILE, train_stats)
         logger.save_model(epoch=0, model=self.model)
-
-        train_stats = pd.DataFrame(columns=[
-            'epoch',
-            'loss',
-            'total_training',
-            'raw_training',
-            'total_validation',
-            'raw_validation'
-        ])
+        train_stats = pd.DataFrame(columns=self.TRAIN_METRICS)
 
         if shuffle_batches:
             log.debug('Shuffle batch iterator')
@@ -177,39 +162,24 @@ class Experiment:
             lst = self.dataset
         
         for epoch in range(1, n_epochs + 1):
-            # monitor training loss
 
-            raw_time_training = total_time_training = train_loss = 0.0
-
-            prev_raw_time_training = self.get_raw_time_training()
-            prev_raw_time_validation = self.get_raw_time_validation()
-            prev_total_time_training = self.get_total_time_training()
-            prev_total_time_validation = self.get_total_time_validation()
-
-            # min_mal_batch = math.ceil(len(self.dataset.dataset.datasets[0]) / self.dataset.batch_size)
             if shuffle_batches: random.shuffle(lst)
+            train_loss = 0.
             
             for batch, (data, target) in enumerate(lst):
 
-                start_total_time_training = time.time()
+                self.time_tracker.start('total_time_training')
 
                 # SAVE TO SET
                 vset = ValidationSet(epoch, batch)
                 vset.set_data(data, target)
                 vset.set_model_start(self.model)
                 vset.set_optimizer(self.optimizer)
-
-                start_raw_time_training = time.time()
-                
-                # TRAINING
-                # if batch == min_mal_batch:
-                #     print(min_mal_batch)
-
-                # print(f'Poisoned Epoch: {epoch}, Batch: {batch}:')
+                self.time_tracker.start('raw_time_training')
                 loss = self.training_fn(self.model, self.optimizer, self.loss_fn, data, target, **self.training_params)
+                self.time_tracker.stop('raw_time_training')
 
-                end_raw_time_training = time.time()
-
+                # GET GRADIENTS
                 for key in activations.keys():
                     l =  getattr(self.model, key)
                     gradients[key][1] = l.weight.grad
@@ -228,71 +198,43 @@ class Experiment:
                 
                 train_loss += loss.item()*data.size(0)
 
-                end_total_time_training = time.time()
+                self.time_tracker.stop('total_time_training')
 
-                raw_time_training += end_raw_time_training - start_raw_time_training
-                total_time_training += end_total_time_training - start_total_time_training
-
-                if len(self.buffer) >= max_buffer_len or len(self.dataset.dataset) == batch+1:
-                    
+                if len(self.buffer) >= max_buffer_len or len(lst) == batch+1:
                     gc.collect() # Free unused memory
-
-                    # print(f"\traw_time_training: {raw_time_training:.4f}")
-                    self.add_raw_time_training(raw_time_training)
-
-                    # print(f"\ttotal_time_training: {total_time_training:.4f}")
-                    self.add_total_time_training(total_time_training)
-
                     if self.run_validation:
-                    
-                        # print() # Space between Poisoned and Detected output
-                        start_total_time_validation = time.time()
-                        #cProfile.runctx('self.validate(self.buffer)', globals(), locals())
-                        #.run('self.validate(self.buffer)', 'profile.txt')
+                        self.time_tracker.start('total_time_validation')
                         self.validate(self.buffer)
-                        end_total_time_validation = time.time()
-                        # print() # Space between Poisoned and Detected output
-
-                        total_time_validation = end_total_time_validation - start_total_time_validation
-
-                        # print(f"\ttotal_time_validation: {total_time_validation:.4f}")
-                        self.add_total_time_validation(total_time_validation)
-
+                        self.time_tracker.stop('total_time_validation')
                     self.buffer = dict()
                     gc.collect() # Free unused memory
-                    raw_time_training = total_time_training = 0.0
                     # break
             
             logger.save_model(epoch, self.model)
             
             train_loss = train_loss/len(self.dataset.dataset)
-            log.info('Epoch: {} \tTraining Loss: {:.6f}'.format(epoch, train_loss))
+            epoch_total_time_training = self.time_tracker['total_time_training']
+            epoch_raw_time_training = self.time_tracker['raw_time_training']
+            epoch_total_time_validation = self.time_tracker['total_time_validation']
+            epoch_raw_time_validation = self.time_tracker['raw_time_validation']
 
-            log.info(f"Epoch Raw Times\t{self.get_raw_time_training() - prev_raw_time_training:.4f} training\t{self.get_raw_time_validation() - prev_raw_time_validation:.4f} validation")
-            log.info(f"Epoch Total Times\t{self.get_total_time_training() - prev_total_time_training:.4f} training\t{self.get_total_time_validation() - prev_total_time_validation:.4f} validation")
+            log.info(f'Epoch {epoch}  \t\tTraining Loss: {train_loss:.6f}')
+            log.info(f"Epoch Raw Times  \t{epoch_raw_time_training:.4f} training\t{epoch_raw_time_validation:.4f} validation")
+            log.info(f"Epoch Total Times\t{epoch_total_time_training:.4f} training\t{epoch_total_time_validation:.4f} validation")
 
             train_stats.loc[epoch] = [
-                epoch,
                 train_loss,
-                self.get_total_time_training() - prev_total_time_training,
-                self.get_raw_time_training() - prev_raw_time_training,
-                self.get_total_time_validation() - prev_total_time_validation,
-                self.get_raw_time_validation() - prev_raw_time_validation
+                epoch_total_time_training,
+                epoch_raw_time_training,
+                epoch_total_time_validation,
+                epoch_raw_time_validation
             ]
-            train_stats.to_csv(logger.STATS_FILE)
 
-            # train_stats = [[
-            #     epoch,
-            #     train_loss,
-            #     self.get_total_time_training() - prev_total_time_training,
-            #     self.get_raw_time_training() - prev_raw_time_training,
-            #     self.get_total_time_validation() - prev_total_time_validation,
-            #     self.get_raw_time_validation() - prev_raw_time_validation
-            # ]]
-            # logger.put_csv(logger.STATS_FILE, train_stats)
+            logger.save_stats(train_stats)
+            logger.save_times(self.time_tracker, epoch)
+            self.time_tracker.clear()
 
     def validate(self, buffer):
-        total_time = init_time = validation_time = init_model = init_state_dict = 0.0
 
         model = self.model_builder()
         next_model = self.model_builder()
@@ -300,69 +242,25 @@ class Experiment:
         loss_fn = self.loss_fn_builder()
         
         for index, vset in buffer.items():
-            start_time = time.time()
 
             model.load_state_dict(vset.get_model_start())
             next_model.load_state_dict(vset.get_model_end())
             optimizer.load_state_dict(vset.get_optimizer())
 
-            mid_time = time.time()
-
+            self.time_tracker.start('raw_time_validation')
             self.validation_fn(
                 model=model, 
                 optimizer=optimizer, 
                 loss_fn=loss_fn, 
                 next_model=next_model,
+                time_tracker=self.time_tracker,
                 index=index,
                 validation_set=vset,
-                verbose=False,
-                silent=True
+                # verbose=False,
+                # silent=True
             )
-            end_time = time.time()
-            total_time += end_time - start_time
-            init_time += mid_time - start_time
-            validation_time += end_time - mid_time
+            self.time_tracker.stop('raw_time_validation')
             # break
-
-        # print(f"\traw_time_validation: {validation_time:.4f}")
-        self.add_raw_time_validation(validation_time)
-
-    def set_total_time_training(self, time):
-        self.total_time_training = time
-
-    def add_total_time_training(self, time):
-        self.total_time_training += time
-
-    def get_total_time_training(self):
-        return self.total_time_training
-    
-    def set_total_time_validation(self, time):
-        self.total_time_validation = time
-    
-    def add_total_time_validation(self, time):
-        self.total_time_validation += time
-    
-    def get_total_time_validation(self):
-        return self.total_time_validation
-
-    def set_raw_time_training(self, time):
-        self.raw_time_training = time
-
-    def add_raw_time_training(self, time):
-        self.raw_time_training += time
-
-    def get_raw_time_training(self):
-        return self.raw_time_training
-    
-    def set_raw_time_validation(self, time):
-        self.raw_time_validation = time
-    
-    def add_raw_time_validation(self, time):
-        self.raw_time_validation += time
-    
-    def get_raw_time_validation(self):
-        return self.raw_time_validation
     
     def stats(self):
-        log.info(f"Raw Times\t{self.raw_time_training:.4f} training\t{self.raw_time_validation:.4f} validation")
-        log.info(f"Total Times\t{self.total_time_training:.4f} training\t{self.total_time_validation:.4f} validation")
+        print(self.time_tracker)

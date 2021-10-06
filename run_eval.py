@@ -42,12 +42,12 @@ plotter = Plotter(logger)
 
 if args.clean:
     print('Cleaning up all generated files.')
-    plotter.clean_metrics()
-    plotter.clean_plots()
+    plotter.clear_metrics()
+    plotter.clear_plots()
 
 if args.generate:
     print('Generating metrics from logs.')
-    plotter.clean_metrics()
+    plotter.clear_metrics()
     plotter.generate()
 
 for metric in args.metrics:

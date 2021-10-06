@@ -25,10 +25,10 @@ loss_fn:
   params:
 training:
   # seed: 0
-  n_epochs: 20
+  n_epochs: 10 # 20
   max_buffer_len: 50
   shuffle_batches: False
-  log_dir: seminar
+  log_dir: times_submul_block
   training_method: no_attack
   training_params: {}
   # training_method: targeted_attack
@@ -40,8 +40,9 @@ training:
   #   frequency: 0.1
   #   scale: 0.25
 validation:
-  run_validation: False
+  run_validation: True
   validation_type: extract
-  validation_method: freivald
+  validation_method: submul # gvfa # freivald # matmul
   verbose: False
-  silent: False
+  silent: True
+  # val_prob: 0

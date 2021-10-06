@@ -11,11 +11,18 @@ Performance Parameters:
 - Batch Size
 """
 
-import yaml
+import yaml, argparse
 import logging as log
 from pathlib import Path
 
 from flow.experiment import Experiment
+
+# ARGUMENT PARSING
+
+parser = argparse.ArgumentParser(description='Argument parser for log processing and plot creation')
+parser.add_argument('-r', '--repeat', type=int, default=1, required=False, help='Number of times to repeat the experiement.')
+
+args = parser.parse_args()
 
 # LOGGING
 log.basicConfig(
@@ -45,6 +52,7 @@ log.debug(f'Validation Config: {validation_cnf}')
 
 if __name__ == "__main__":
     exp = Experiment.from_config(CONFIG_FILE)
-    log.info('Running Experiment')
-    exp.run(training_cnf['n_epochs'], max_buffer_len=training_cnf['max_buffer_len'], shuffle_batches=training_cnf['shuffle_batches'], log_dir=training_cnf['log_dir'])
-    exp.stats()
+    for i in range(args.repeat):
+        log.info(f'Starting experiment {i+1} of {args.repeat}')
+        exp.run(training_cnf['n_epochs'], max_buffer_len=training_cnf['max_buffer_len'], shuffle_batches=training_cnf['shuffle_batches'], log_dir=training_cnf['log_dir'])
+        exp.stats()
