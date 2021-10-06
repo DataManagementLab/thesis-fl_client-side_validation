@@ -1,5 +1,6 @@
+from collections import defaultdict
 from pathlib import Path
-from numpy import imag
+from numpy import imag, zeros
 from torch.nn.modules.module import T
 from torch.utils.data import DataLoader
 from typing import List, Optional
@@ -88,32 +89,28 @@ class Plotter:
                         overall_accuracy=overall_accuracy)
                     metrics_csv[x] = metrics_csv[x].append(csv_tuple, ignore_index=True)
 
-        for x, v in metrics_csv.items():
-            metrics_file = self.metrics_path / f'{x}_metrics.csv'
-            assert not metrics_file.exists()
-            v.to_csv(metrics_file, index_label='epoch')
+        for label, metrics in metrics_csv.items():
+            self.logger.save_metrics(label, metrics)
     
     def plot_metric(self, metric: str, ymin: int = None, ymax: int = None, xmin: int = None, xmax: int = None, x_label: str = 'epochs'):
         print(f'Generating plot for metric "{metric}"', end=' ')
         fig, ax = plt.subplots()
-        metric_files = self.logger.find_paths('*_metrics.csv')
-        for metric_file in sorted(metric_files):
-            key = metric_file.name.split('_')[0]
-            df = pd.read_csv(metric_file)
-            df[metric].plot(ax=ax, label=key)
+        for label in self.logger.list_metrics():
+            df = self.logger.load_metrics(label)
+            df[metric].plot(ax=ax, label=label)
         ax.legend()
         ax.set_xlim(xmin, xmax)
         ax.set_ylim(ymin, ymax)
         ax.set_xlabel(x_label)
         ax.set_ylabel(metric)
         ax.grid()
-        self.plots_path.mkdir(parents=True, exist_ok=True)
-        plt.savefig(self.plots_path / f'{metric}.png')
+        self.logger.save_plot(metric, fig)
+        plt.close(fig)
         print(utils.vc(True))
     
     @classmethod
     def plot_summary(cls, plot_cnf: Path) -> None:
-        assert plot_cnf.exists() and plot_cnf.is_file(), 'Summary plot config file does not exist.'
+        assert plot_cnf.is_file(), 'Summary plot config file does not exist.'
         with open(plot_cnf, 'r') as f:
             plot = yaml.load(f, Loader)
         log_dir = Path(plot['log_dir'])
@@ -124,25 +121,90 @@ class Plotter:
             df = pd.read_csv(metric_file)
             df[el['metric']].plot(ax=ax, label=el['label'])
         ax.legend()
-        if 'xlabel' in plot: ax.set_xlabel(plot['xlabel'])
-        if 'ylabel' in plot: ax.set_ylabel(plot['ylabel'])
-        if 'grid' in plot and plot['grid'] == True: ax.grid()
-        xmin = plot['xmin'] if 'xmin' in plot else None
-        xmax = plot['xmax'] if 'xmax' in plot else None
-        ymin = plot['ymin'] if 'ymin' in plot else None
-        ymax = plot['ymax'] if 'ymax' in plot else None
-        ax.set_xlim(xmin, xmax)
-        ax.set_ylim(ymin, ymax)
+        if plot.get('grid') == True: ax.grid()
+        # if 'xlabel' in plot: ax.set_xlabel(plot['xlabel'])
+        # if 'ylabel' in plot: ax.set_ylabel(plot['ylabel'])
+        ax.set_xlabel(plot.get('xlabel'))
+        ax.set_ylabel(plot.get('ylabel'))
+        ax.set_xlim(plot.get('xmin'), plot.get('xmax'))
+        ax.set_ylim(plot.get('ymin'), plot.get('ymax'))
         plot_path.parent.mkdir(parents=True, exist_ok=True)
-        plt.savefig(plot_path)
+        fig.savefig(plot_path)
+        plt.close(fig)
     
-    def clean_metrics(self):
-        metric_files = self.logger.find_paths('*_metrics.csv')
-        for metric_file in metric_files: metric_file.unlink()
+    @classmethod
+    def plot_stats(self, plot_cnf: Path) -> None:
+        assert plot_cnf.is_file(), 'Plot config file does not exist.'
+        with open(plot_cnf, 'r') as f:
+            plot = yaml.load(f, Loader)
+        plot_path = Path(plot.get('log_dir')) / plot.get('plot_dir') / f"{plot.get('name')}.png"
+        fig, ax = plt.subplots()
+        stats_sum = { metric: defaultdict(int) for metric in plot['metrics'] }
+        for el in plot['data']:
+            exp_paths = Path(el['log_dir']).glob('experiment_*')
+            for exp_path in exp_paths:
+                n_exp = len(list(exp_paths))
+                metric_file = exp_path / Logger.STATS_FILE
+                df = pd.read_csv(metric_file)
+                df = df[plot['metrics']].sum(axis=0, skipna=True)
+                for metric in plot['metrics']:
+                    stats_sum[metric][el['label']] += df[metric] / n_exp
 
-    def clean_plots(self):
-        metric_files = self.logger.find_paths('*.png', recursive=True)
-        for metric_file in metric_files: metric_file.unlink()
+        print(stats_sum)
+        y_bottom = [0] * len(plot['data'])
+        for metric, data in stats_sum.items():
+            ax.bar(data.keys(), data.values(), label=metric, bottom=y_bottom)
+            y_bottom = list(data.values())
+
+        ax.legend()
+        if plot.get('grid') == True: ax.grid()
+        ax.set_xlabel(plot.get('xlabel'))
+        ax.set_ylabel(plot.get('ylabel'))
+        ax.set_xlim(plot.get('xmin'), plot.get('xmax'))
+        ax.set_ylim(plot.get('ymin'), plot.get('ymax'))
+        plot_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(plot_path)
+        plt.close(fig)
+    
+    @classmethod
+    def plot_times(self, plot_cnf: Path) -> None:
+        assert plot_cnf.is_file(), 'Plot config file does not exist.'
+        with open(plot_cnf, 'r') as f:
+            plot = yaml.load(f, Loader)
+        plot_path = Path(plot.get('log_dir')) / plot.get('plot_dir') / f"{plot.get('name')}.png"
+        fig, ax = plt.subplots()
+        stats_sum = { metric: defaultdict(int) for metric in plot['metrics'] }
+        for el in plot['data']:
+            exp_paths = list(Path(el['log_dir']).glob('experiment_*'))
+            n_exp = len(exp_paths)
+            for exp_path in exp_paths:
+                logger = Logger(base_path=el['log_dir'], exp_name=exp_path.name)
+                for epoch in range(1, logger.num_epochs):
+                    tt = logger.load_times(epoch)
+                    for metric in plot['metrics']:
+                        stats_sum[metric][el['label']] += tt.get(metric, 0) / n_exp / logger.num_epochs
+
+        y_bottom = [0] * len(plot['data'])
+        for metric, data in stats_sum.items():
+            ax.bar(data.keys(), data.values(), label=metric, bottom=y_bottom)
+            y_bottom = [ a+b for a, b in zip(y_bottom, data.values())]
+
+        ax.legend()
+        if plot.get('grid') == True: ax.grid()
+        ax.set_xlabel(plot.get('xlabel'))
+        ax.set_ylabel(plot.get('ylabel'))
+        ax.set_xlim(plot.get('xmin'), plot.get('xmax'))
+        ax.set_ylim(plot.get('ymin'), plot.get('ymax'))
+        ax.set_title(plot.get('title'))
+        plot_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(plot_path)
+        plt.close(fig)
+    
+    def clear_metrics(self):
+        self.logger.clear_metrics()
+
+    def clear_plots(self):
+        self.logger.clear_plots()
 
     def _calc_precision(self, TP: int, FP: int) -> Optional[float]:
         if not TP == 0: return TP / (TP + FP)
@@ -157,10 +219,3 @@ class Plotter:
     def _calc_accuracy(self, TP: int, TN: int, FP: int, FN: int) -> Optional[float]:
         if not TP == TN == 0: return (TP + TN) / (TP + TN + FP + FN)
     
-    @property
-    def plots_path(self) -> Path:
-        return self.logger.get_path(tail=self.PLOT_DIR)
-    
-    @property
-    def metrics_path(self) -> Path:
-        return self.logger.get_path()

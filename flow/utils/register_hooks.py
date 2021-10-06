@@ -11,7 +11,7 @@ def register_activation_hooks(model, module_types=[nn.Linear, nn.Conv2d]):
     activations = defaultdict(list)
 
     def save_activation(name, module, input, output): 
-        activations[name].append(output.detach())
+        activations[name].append(output.detach().clone())
 
     for name, module in model.named_modules():
         if type(module) in module_types:
