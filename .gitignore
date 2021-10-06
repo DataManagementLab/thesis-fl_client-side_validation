@@ -1,6 +1,7 @@
 # Custom
 datasets/
 times_*/
+logs/
 
 # ===== Python Default =====
 
