@@ -1,23 +1,36 @@
 import time, os, random
 
-# The consumer function takes data off of the Queue
-def validation_process(queue, lock):
-    # Synchronize access to the console
-    with lock:
-        print('Starting consumer => {}'.format(os.getpid()))
-     
-    # Run indefinitely
-    while True:
-        time.sleep(random.randint(0, 20))
-         
-        # If the queue is empty, queue.get() will block until the queue has data
-        name = queue.get()
+from pathlib import Path
+from .process_logger import get_process_logger
+from flow.validation import validate_buffer
 
-        if name is None:
-            with lock:
-                print('Consumer {} exiting...'.format(os.getpid()))
+
+def validation_process(queue, logger, **validation_kwargs):
+    log = get_process_logger()
+    log.info('Starting validator => {}'.format(os.getpid()))
+
+    while True:
+        buffer = queue.get()
+
+        if buffer is None:
+            log.info('Validator {} exiting...'.format(os.getpid()))
             return
-         
-        # Synchronize access to the console
-        with lock:
-            print('{} got {}'.format(os.getpid(), name))
+        
+        log.info('{} got {}'.format(os.getpid(), len(buffer)))
+        validate_buffer(buffer, logger=logger, **validation_kwargs)
+
+
+def consumer_process(queue, logger, **validation_kwarg):
+    log = get_process_logger()
+    log.info('Starting consumer => {}'.format(os.getpid()))
+
+    while True:
+        time.sleep(random.randint(0, 2))
+
+        buffer = queue.get()
+
+        if buffer is None:
+            log.info('Consumer {} exiting...'.format(os.getpid()))
+            return
+        
+        log.info('{} got {}'.format(os.getpid(), 'buffer'))

@@ -1,36 +1,42 @@
 import torch, numpy, sys, time
 from flow.utils import tensors_close
 
-def submul(A, B, C, bias=None, rtol=1e-05, atol=1e-08, frac=0.5):
+def submul(A, B, C, bias=None, rtol=1e-05, atol=1e-08, num=2):
     """
     Normal forward pass
     """
     t1 = time.time()
     if bias is None: bias = torch.zeros(B.shape[1])
     
-    frac_A = int(A.shape[0] * frac)
-    frac_B = int(B.shape[1] * frac)
+    frac_A = num # int(A.shape[0] * frac)
+    frac_B = num # int(B.shape[1] * frac)
 
     if True:
         strt_A = torch.randint(0, A.shape[0] - frac_A,(1,)).item()
-        strt_B = torch.randint(0, B.shape[1] - frac_B,(1,)).item()
+        # strt_B = torch.randint(0, B.shape[1] - frac_B,(1,)).item()
         
         A__ = A[strt_A:strt_A+frac_A]
-        B__ = B[:,strt_B:strt_B+frac_B]
-        bias__ = bias[strt_B:strt_B+frac_B]
-        C__ = C[strt_A:strt_A+frac_A][:,strt_B:strt_B+frac_B]
+        # B__ = B[:,strt_B:strt_B+frac_B]
+        # bias__ = bias[strt_B:strt_B+frac_B]
+        # C__ = C[strt_A:strt_A+frac_A][:,strt_B:strt_B+frac_B]
+        C__ = C[strt_A:strt_A+frac_A]
+        B__ = B
+        bias__ = bias
     else:
         choice_A = numpy.random.choice(
             torch.arange(0,A.shape[0]), 
             size=frac_A)
-        choice_B = numpy.random.choice(
-            torch.arange(0,B.shape[1]), 
-            size=frac_B)
+        # choice_B = numpy.random.choice(
+        #     torch.arange(0,B.shape[1]), 
+        #     size=frac_B)
         
         A__ = A[choice_A]
-        B__ = B[:,choice_B]
-        bias__ = bias[choice_B]
-        C__ = C[choice_A][:,choice_B]
+        # B__ = B[:,choice_B]
+        # bias__ = bias[choice_B]
+        # C__ = C[choice_A][:,choice_B]
+        C__ = C[choice_A]
+        B__ = B
+        bias__ = bias
 
     t2 = time.time()
     C_ = torch.mm(A__, B__) + bias__

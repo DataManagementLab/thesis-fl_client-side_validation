@@ -1,10 +1,11 @@
 import torch
 import torch.nn.functional as F
 
-from flow.utils import vc, TimeTracker, tensors_close, rand_true
-import sys
+from flow.utils import TimeTracker, Logger, ValidationSet, vc, tensors_close, rand_true
 
-def validate_extract(validation_method, validation_set, model, optimizer, loss_fn, next_model, time_tracker: TimeTracker, val_prob=None, verbose=False, silent=False, index=None):
+def validate_extract(validation_method, validation_set: ValidationSet, model, optimizer, loss_fn, next_model, time_tracker: TimeTracker, logger: Logger, val_prob=None, verbose=False, silent=False, index=None):
+
+    # logger.log_attack_detection(validation_set.epoch, dict(msg="epoch: {}, batch: {}".format(*validation_set.get_id())))
 
     data, target, activations, gradients, loss = validation_set.get_dict().values()
 
@@ -23,6 +24,13 @@ def validate_extract(validation_method, validation_set, model, optimizer, loss_f
         if rand_true(val_prob):
             layer = getattr(model, key)
             act_valid = validation_method(data, layer.weight.T, val[0], bias=layer.bias, rtol=1e-05, atol=1e-04)
+            if not act_valid:
+                logger.log_attack_detection(
+                    validation_set.epoch, 
+                    validation_set.batch,
+                    key,
+                    'ACTIVATION'
+                )
             if verbose: print(f'    {vc(act_valid)} {key} (n: {val[0].shape[0]})')
             act_total &= act_valid
         if False and i+1 == len(activations):
@@ -39,6 +47,13 @@ def validate_extract(validation_method, validation_set, model, optimizer, loss_f
     # loss_diff = abs(loss_check.item()-loss.item())/abs(loss_check.item())*100
     # loss_valid = loss_diff == 0.0
     loss_valid = tensors_close(loss_check, loss)
+    if not loss_valid:
+        logger.log_attack_detection(
+            validation_set.epoch, 
+            validation_set.batch,
+            key,
+            'LOSS'
+        )
     if verbose: print('  LOSS:\n    {} DIFF[{}, {}]'.format(vc(loss_valid), loss_check.item(), loss.item()))
     # data.retain_grad()
     loss_check.backward()
@@ -76,6 +91,28 @@ def validate_extract(validation_method, validation_set, model, optimizer, loss_f
             # if not grad_W_valid: print(f'Detected Epoch: {validation_set.epoch}, Batch: {validation_set.batch}, Weight: {key}.weight')
             # if not grad_b_valid: print(f'Detected Epoch: {validation_set.epoch}, Batch: {validation_set.batch}, Weight: {key}.bias')
 
+            if not grad_x_valid: 
+                logger.log_attack_detection(
+                    validation_set.epoch, 
+                    validation_set.batch,
+                    key + '.input',
+                    'GRADIENT'
+                )
+            if not grad_W_valid: 
+                logger.log_attack_detection(
+                    validation_set.epoch, 
+                    validation_set.batch,
+                    key + '.weight',
+                    'GRADIENT'
+                )
+            if not grad_b_valid: 
+                logger.log_attack_detection(
+                    validation_set.epoch, 
+                    validation_set.batch,
+                    key + '.bias',
+                    'GRADIENT'
+                )
+
             grad_valid = grad_x_valid and grad_W_valid and grad_b_valid
             grad_total &= grad_valid
             
@@ -108,6 +145,21 @@ def validate_extract(validation_method, validation_set, model, optimizer, loss_f
             W_valid = tensors_close(new_layer.weight, next_layer.weight)
             b_valid = tensors_close(new_layer.bias, next_layer.bias)
             time_tracker.stop('validate_weights_allclose')
+
+            if not W_valid: 
+                logger.log_attack_detection(
+                    validation_set.epoch, 
+                    validation_set.batch,
+                    key,
+                    'WEIGHT_B'
+                )
+            if not b_valid: 
+                logger.log_attack_detection(
+                    validation_set.epoch, 
+                    validation_set.batch,
+                    key,
+                    'WEIGHT_B'
+                )
             if verbose: print(f'    {key} {vc(W_valid)} (weight) {vc(b_valid)} (bias)')
             weight_total &= W_valid & b_valid
     time_tracker.stop('validate_weights')

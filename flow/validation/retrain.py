@@ -1,9 +1,6 @@
-import torch
-import math
+from flow.utils import vc, register_activation_hooks, register_gradient_hooks, TimeTracker, Logger, tensors_close
 
-from flow.utils import vc, register_activation_hooks, register_gradient_hooks, TimeTracker, tensors_close
-
-def validate_retrain(validation_set, model, optimizer, loss_fn, next_model, time_tracker: TimeTracker, verbose=False, silent=False, index=None):
+def validate_retrain(validation_set, model, optimizer, loss_fn, next_model, time_tracker: TimeTracker, logger: Logger, verbose=False, silent=False, index=None):
 
     time_tracker.start('validate_other')
     data, target, activations, gradients, loss = validation_set.get_dict().values()

@@ -13,6 +13,7 @@
 
 # PROFILER
 import cProfile
+import multiprocessing
 from numpy import real
 
 # LIB IMPORTS
@@ -34,7 +35,8 @@ log.basicConfig(
 
 # MODULE IMPORTS
 from flow import training, validation, datasets, models
-from flow.utils import ValidationSet, Logger, TimeTracker, register_activation_hooks, register_gradient_hooks, partial_class, load_config, time_tracker
+from flow.utils import ValidationSet, Logger, TimeTracker, logger, register_activation_hooks, register_gradient_hooks, partial_class, load_config, time_tracker
+from flow.multiprocessing import start_validators, stop_validators
 
 class Experiment:
 
@@ -87,11 +89,6 @@ class Experiment:
             train_loader, 
             config_file,
             **validation_cnf)
-            # run_validation=validation_cnf['run_validation'],
-            # validation_type=validation_cnf['validation_type'], 
-            # validation_method=validation_cnf['validation_method'],
-            # verbose=validation_cnf['verbose'],
-            # silent=validation_cnf['silent'])
         
         if 'training_method' in training_cnf:
             log.info('Setting experiment training method to "{}"'.format(training_cnf['training_method']))
@@ -103,7 +100,7 @@ class Experiment:
         
         return exp
     
-    def set_validation_fn(self, validation_type, validation_method='', **validation_kwargs):
+    def set_validation_fn(self, validation_type, validation_method='', async_validators=0, **validation_kwargs):
         SEPARATOR = '.'
 
         if validation_type == 'retrain':
@@ -119,6 +116,8 @@ class Experiment:
         else:
             log.error(f'Validation type {validation_type} is not supported.')
             return
+        
+        self.async_validators = async_validators
 
         log.debug(f'Set validation function to {self.validation_id}')
     
@@ -150,10 +149,24 @@ class Experiment:
         activations = register_activation_hooks(self.model)
         gradients = register_gradient_hooks(self.model)
 
-        logger = Logger(log_dir)
-        logger.copy_config(self.config_file)
-        logger.save_model(epoch=0, model=self.model)
+        self.logger = Logger(log_dir)
+        self.logger.copy_config(self.config_file)
+
+        assert not self.logger.epoch_exists(0)
+        self.logger.save_model(epoch=0, model=self.model)
         train_stats = pd.DataFrame(columns=self.TRAIN_METRICS)
+
+        if self.async_validation:
+            # Launch Validators, Lock and Queue
+            consumers, queue, lock = start_validators(
+                self.async_validators,
+                logger=self.logger,
+                validation_fn=self.validation_fn, 
+                model_builder=self.model_builder,
+                optimizer_builder=self.optimizer_builder,
+                loss_fn_builder=self.loss_fn_builder,
+                time_tracker=self.time_tracker)
+            self.async_queue = queue
 
         if shuffle_batches:
             log.debug('Shuffle batch iterator')
@@ -162,6 +175,8 @@ class Experiment:
             lst = self.dataset
         
         for epoch in range(1, n_epochs + 1):
+
+            assert not self.logger.epoch_exists(epoch), f'Can not overwrite existing epoch {epoch}'
 
             if shuffle_batches: random.shuffle(lst)
             train_loss = 0.
@@ -176,17 +191,18 @@ class Experiment:
                 vset.set_model_start(self.model)
                 vset.set_optimizer(self.optimizer)
                 self.time_tracker.start('raw_time_training')
-                loss = self.training_fn(self.model, self.optimizer, self.loss_fn, data, target, **self.training_params)
+                loss = self.training_fn(self.model, self.optimizer, self.loss_fn, data, target, epoch, batch, self.logger, **self.training_params)
                 self.time_tracker.stop('raw_time_training')
 
                 # GET GRADIENTS
                 for key in activations.keys():
                     l =  getattr(self.model, key)
-                    gradients[key][1] = l.weight.grad
-                    gradients[key][2] = l.bias.grad
+                    if len(gradients[key]) == 0: gradients[key].append(None)
+                    gradients[key].append(l.weight.grad.detach().clone())
+                    gradients[key].append(l.bias.grad.detach().clone())
 
                 # SAVE TO SET
-                vset.set_loss(loss)
+                vset.set_loss(loss.detach().clone())
                 vset.set_activations(activations)
                 vset.set_gradients(gradients)
                 vset.set_model_end(self.model)
@@ -204,13 +220,15 @@ class Experiment:
                     gc.collect() # Free unused memory
                     if self.run_validation:
                         self.time_tracker.start('total_time_validation')
+                        self.time_tracker.start('raw_time_validation')
+                        self.time_tracker.stop('raw_time_validation')
                         self.validate(self.buffer)
                         self.time_tracker.stop('total_time_validation')
                     self.buffer = dict()
                     gc.collect() # Free unused memory
                     # break
             
-            logger.save_model(epoch, self.model)
+            self.logger.save_model(epoch, self.model)
             
             train_loss = train_loss/len(self.dataset.dataset)
             epoch_total_time_training = self.time_tracker['total_time_training']
@@ -230,37 +248,33 @@ class Experiment:
                 epoch_raw_time_validation
             ]
 
-            logger.save_stats(train_stats)
-            logger.save_times(self.time_tracker, epoch)
+            self.logger.save_stats(train_stats)
+            self.logger.save_times(self.time_tracker, epoch)
             self.time_tracker.clear()
+        
+        del self.logger
+        if self.async_validation:
+            # Join Validators
+            stop_validators(consumers, queue)
+            del self.async_queue
 
     def validate(self, buffer):
 
-        model = self.model_builder()
-        next_model = self.model_builder()
-        optimizer = self.optimizer_builder(model.parameters())
-        loss_fn = self.loss_fn_builder()
-        
-        for index, vset in buffer.items():
-
-            model.load_state_dict(vset.get_model_start())
-            next_model.load_state_dict(vset.get_model_end())
-            optimizer.load_state_dict(vset.get_optimizer())
-
-            self.time_tracker.start('raw_time_validation')
-            self.validation_fn(
-                model=model, 
-                optimizer=optimizer, 
-                loss_fn=loss_fn, 
-                next_model=next_model,
-                time_tracker=self.time_tracker,
-                index=index,
-                validation_set=vset,
-                # verbose=False,
-                # silent=True
-            )
-            self.time_tracker.stop('raw_time_validation')
-            # break
+        if self.async_validation:
+            self.async_queue.put(buffer)
+        else:
+            validation.validate_buffer(
+                buffer, 
+                self.validation_fn, 
+                self.model_builder,
+                self.optimizer_builder,
+                self.loss_fn_builder,
+                self.time_tracker,
+                self.logger)
+    
+    @property
+    def async_validation(self):
+        return self.async_validators > 0
     
     def stats(self):
         print(self.time_tracker)

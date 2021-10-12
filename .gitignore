@@ -2,6 +2,7 @@
 datasets/
 times_*/
 logs/
+test_code/
 
 # ===== Python Default =====
 

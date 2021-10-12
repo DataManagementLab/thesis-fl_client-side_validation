@@ -1,6 +1,6 @@
 ---
 log_dir: thesis_carsten_01
-plot_dir: summary_plots
+plot_dir: testing_plots
 name: raw_times_matsubmul_all
 title: comparison of validation methods
 # xlabel: epochs
@@ -19,20 +19,26 @@ metrics:
 data:
 # - log_dir: times_retrain_allclose
 #   label: retrain
-# - log_dir: times_freivald_allclose
-#   label: freivald
+- log_dir: times_freivald_allclose
+  label: freivald
 # - log_dir: times_freivald_wval
 #   label: freivald wval
-- log_dir: times_matmul_allclose
-  label: matmul
+# - log_dir: times_matmul_allclose
+#   label: matmul
 - log_dir: times_matmul_prob
   label: matmul prob 0.6
 # - log_dir: times_submul
 #   label: submul 0.5
-- log_dir: times_submul_block
-  label: submul block 0.5
-- log_dir: times_matmul_noval
-  label: matmul noval
+- log_dir: times_submul_2
+  label: submul 2
+- log_dir: times_submul_2_2
+  label: submul 2_2
+- log_dir: times_submul_2_rand
+  label: submul 2 rand
+- log_dir: times_submul_2_rand2
+  label: submul 2 rand2
+# - log_dir: times_matmul_noval
+#   label: matmul noval
 # - log_dir: times_gvfa_allclose
 #   label: gvfa
 ...

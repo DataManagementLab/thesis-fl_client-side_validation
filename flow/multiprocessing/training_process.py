@@ -1,10 +1,12 @@
 import time, os, random
- 
+from .process_logger import get_process_logger
+
 # Producer function that places data on the Queue
 def training_process(queue, lock, names):
+    logger = get_process_logger()
+
     # Synchronize access to the console
-    with lock:
-        print('Starting producer => {}'.format(os.getpid()))
+    logger.info('Starting producer => {}'.format(os.getpid()))
          
     # Place our names on the Queue
     for name in names:
@@ -12,5 +14,4 @@ def training_process(queue, lock, names):
         queue.put(name)
  
     # Synchronize access to the console
-    with lock:
-        print('Producer {} exiting...'.format(os.getpid()))
+    logger.info('Producer {} exiting...'.format(os.getpid()))

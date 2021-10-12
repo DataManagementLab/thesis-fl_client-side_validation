@@ -4,8 +4,9 @@ import yaml, csv, shutil, json
 from yaml import Loader, Dumper
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, Iterator
+from typing import List, Dict, Iterator
 import pandas as pd
+from copy import deepcopy
 
 from matplotlib.pyplot import savefig
 from matplotlib.figure import Figure
@@ -35,6 +36,9 @@ class Logger:
     METRICS_DIR = 'metrics'
     PLOTS_DIR = 'plots'
     TIMES_FILE = 'times.json'
+    MODEL_FILE = 'model.pth'
+    ATTACKS_APPLIED_LOG = 'attacks_applied.csv'
+    ATTACKS_DETECTED_LOG = 'attacks_detected.csv'
     EXP_NAME_FORMAT = 'experiment_%Y_%m_%d__%H:%M'
 
     def __init__(self, base_path: str = None, exp_name: str = None, timestamp: datetime = None) -> None:
@@ -46,6 +50,9 @@ class Logger:
             timestamp = timestamp or datetime.now()
             self.exp_str = timestamp.strftime(self.EXP_NAME_FORMAT)
         self.get_path().mkdir(parents=True, exist_ok=True)
+    
+    def clone(self):
+        return deepcopy(self)
 
     def get_path(self, epoch: int = None, tail: str = '') -> Path:
         path = self.base_path / self.exp_str
@@ -62,15 +69,88 @@ class Logger:
     @property
     def num_epochs(self) -> int:
         return len(list(self.get_path(tail=self.EPOCH_DIR).glob('*')))
+    
+    def epoch_exists(self, epoch):
+        return self.get_path(epoch).is_dir()
 
     def save_model(self, epoch: int, model: Module) -> None:
-        self.get_path(epoch).mkdir(parents=True, exist_ok=False)
-        torch.save(model.state_dict(), self.get_path(epoch, 'model.pth'))
+        self.get_path(epoch).mkdir(parents=True, exist_ok=True)
+        torch.save(model.state_dict(), self.get_path(epoch, self.MODEL_FILE))
 
     def load_model(self, epoch: int, model: Module) -> Module:
-        if not self.get_path(epoch, 'model.pth').exists(): raise FileExistsError(f'No model.pth can be loaded for epoch {epoch} in {self.exp_str}')
-        model.load_state_dict(torch.load(self.get_path(epoch, 'model.pth')))
+        if not self.get_path(epoch, self.MODEL_FILE).exists(): raise FileExistsError(f'No file {self.MODEL_FILE} can be loaded for epoch {epoch} in {self.exp_str}')
+        model.load_state_dict(torch.load(self.get_path(epoch, self.MODEL_FILE)))
         return model
+    
+    def set_lock(self, lock):
+        self.lock = lock
+    
+    def rem_lock(self):
+        del self.lock
+    
+    def has_lock(self):
+        return hasattr(self, 'lock')
+    
+    def acquire_lock(self):
+        if self.has_lock(): self.lock.acquire()
+    
+    def release_lock(self):
+        if self.has_lock(): self.lock.release()
+    
+    def init_attack_application_log(self, epoch):
+        data = ['epoch', 'batch', 'element', 'type']
+        path = self.get_path(epoch, self.ATTACKS_APPLIED_LOG)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        self.acquire_lock()
+        try:
+            self._log_csv(path, data)
+        finally:
+            self.release_lock()
+
+    def log_attack_application(self, epoch, batch, element, attack_type):
+        path = self.get_path(epoch, self.ATTACKS_APPLIED_LOG)
+        if not path.is_file(): self.init_attack_application_log(epoch)
+        self.acquire_lock()
+        try:
+            self._log_csv(path, [epoch, batch, element, attack_type])
+        finally:
+            self.release_lock()
+    
+    def init_attack_detection_log(self, epoch):
+        data = ['epoch', 'batch', 'element', 'type']
+        path = self.get_path(epoch, self.ATTACKS_DETECTED_LOG)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        self.acquire_lock()
+        try:
+            self._log_csv(path, data)
+        finally:
+            self.release_lock()
+
+    def log_attack_detection(self, epoch, batch, element, attack_type):
+        path = self.get_path(epoch, self.ATTACKS_DETECTED_LOG)
+        if not path.is_file(): self.init_attack_detection_log(epoch)
+        self.acquire_lock()
+        try:
+            self._log_csv(path, [epoch, batch, element, attack_type])
+        finally:
+            self.release_lock()
+    
+    def check_attack_detection(self):
+        join_index = ['epoch', 'batch', 'element']
+        for epoch in range(1, self.num_epochs):
+            applications = self._load_csv(self.ATTACKS_APPLIED_LOG, epoch).set_index(join_index)
+            detections = self._load_csv(self.ATTACKS_DETECTED_LOG, epoch).set_index(join_index)
+            TP = applications.join(
+                detections,
+                lsuffix='_app',
+                rsuffix='_det')
+            FN = applications.drop(TP.index)
+            FP = detections.drop(TP.index)
+            print('epoch', f'{epoch:03}', end='\t')
+            print(f'Detected: {len(TP)}/{len(applications)}', end='\t')
+            print('TP', len(TP), end='\t')
+            print('FP', len(FP), end='\t')
+            print('FN', len(FN))
     
     def save_config(self, config: Dict) -> None:
         self._save_yaml(config, self.CONFIG_FILE)
@@ -158,3 +238,12 @@ class Logger:
         path = self.get_path(epoch, tail=path)
         assert path.is_file(), f'File {path} does not exist.'
         return pd.read_csv(path, **kwargs)
+    
+    def _log_json(self, path, data: Dict) -> None:
+        with open(path, 'a') as f:
+            f.write(json.dumps(data) + '\n')
+    
+    def _log_csv(self, path, data: List) -> None:
+        with open(path, 'a') as f:
+            writer = csv.writer(f)
+            writer.writerow(data)
