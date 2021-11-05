@@ -1,12 +1,28 @@
 from enum import unique
 import time
 from collections import defaultdict
-from typing import Optional
+from typing import Dict, Optional
 
 class TimeTracker:
 
     def __init__(self):
         self.clear()
+        self.init_timeframes()
+    
+    def start_timeframe(self, key):
+        assert not self.timeframes[key].get('time_from'), 'Timeframe can not be started twice.'
+        self.timeframes[key]['time_from'] = time.time()
+
+    def stop_timeframe(self, key):
+        assert self.timeframes[key].get('time_from'), 'Timeframe can only be stopped after being started.'
+        assert not self.timeframes[key].get('time_to'), 'Timeframe can not be stopped twice.'
+        self.timeframes[key]['time_to'] = time.time()
+
+    def get_timeframe(self, key, format=None) -> Dict: # "%Y-%m-%d %H:%M:%S"
+        res = self.timeframes.get(key)
+        if format:
+            res = { k: time.strftime(format, time.gmtime(v)) for k, v in res.items() }
+        return res
 
     def start(self, id):
         assert not id in self.start_times, f"Timer of id '{id}' is already running."
@@ -30,6 +46,9 @@ class TimeTracker:
         self.total_times_history = defaultdict(list)
         self.start_times = dict()
     
+    def init_timeframes(self):
+        self.timeframes = defaultdict(dict)
+    
     def last(self, id, n=1, get_range=False):
         assert n <= len(self.total_times_history[id]), f"There are less than {n} elements in history for id {id}."
         if get_range:
@@ -37,7 +56,7 @@ class TimeTracker:
         else:
             return self.total_times_history[id][-n]
     
-    def get(self, id, default=None):
+    def get(self, id, default=0):
         if self.has(id):
             return self[id]
         else:

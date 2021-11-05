@@ -1,6 +1,6 @@
 from os import times
 from pandas.core.frame import DataFrame
-import yaml, csv, shutil, json
+import yaml, csv, shutil, json, pickle, uuid
 from yaml import Loader, Dumper
 from pathlib import Path
 from datetime import datetime
@@ -35,7 +35,10 @@ class Logger:
     EPOCH_DIR = 'epoch'
     METRICS_DIR = 'metrics'
     PLOTS_DIR = 'plots'
+    QUEUE_DIR = 'queue'
     TIMES_FILE = 'times.json'
+    TIMES_DIR = 'times'
+    TIME_FRAME_FILE = 'timeframe.csv'
     MODEL_FILE = 'model.pth'
     ATTACKS_APPLIED_LOG = 'attacks_applied.csv'
     ATTACKS_DETECTED_LOG = 'attacks_detected.csv'
@@ -97,6 +100,32 @@ class Logger:
     def release_lock(self):
         if self.has_lock(): self.lock.release()
     
+    def init_timeframe_log(self):
+        data = ['key', 'time_from', 'time_to']
+        path = self.get_path(tail=self.TIME_FRAME_FILE)
+        self.acquire_lock()
+        try:
+            self._log_csv(path, data)
+        finally:
+            self.release_lock()
+
+    def save_timeframe(self, key: str, time_from, time_to):
+        path = self.get_path(tail=self.TIME_FRAME_FILE)
+        if not path.is_file(): self.init_timeframe_log()
+        self.acquire_lock()
+        try:
+            self._log_csv(path, [key, time_from, time_to])
+        finally:
+            self.release_lock()
+
+    def load_timeframes(self):
+        path = self.get_path(tail=self.TIME_FRAME_FILE)
+        self.acquire_lock()
+        try:
+            return self._load_csv(path)
+        finally:
+            self.release_lock()
+    
     def init_attack_application_log(self, epoch):
         data = ['epoch', 'batch', 'element', 'type']
         path = self.get_path(epoch, self.ATTACKS_APPLIED_LOG)
@@ -134,6 +163,34 @@ class Logger:
             self._log_csv(path, [epoch, batch, element, attack_type])
         finally:
             self.release_lock()
+
+    def log_times(self, epoch, times_history: Dict):
+        path = self.get_path(epoch, tail='times')
+        path.mkdir(exist_ok=True)
+        for key, val in times_history.items():
+            kpath = path / f'{key}.csv'
+            if not kpath.is_file(): kpath.touch()
+            self.acquire_lock()
+            try:
+                val = [[v] for v in val]
+                self._log_csv(kpath, val, bulk=True)
+            finally:
+                self.release_lock()
+    
+    def get_times(self, epoch, key):
+        return self._load_csv(f'times/{key}.csv', epoch, header=None, names=[key])
+    
+    def put_queue(self, obj) -> str:
+        path = Path(self.QUEUE_DIR) / str(uuid.uuid4())
+        self._mk_dir(path.parent)
+        self._save_pickle(obj, path)
+        return path.stem
+    
+    def get_queue(self, idx):
+        path = Path(self.QUEUE_DIR) / idx
+        obj = self._load_pickle(path)
+        self._rm_file(path)
+        return obj
     
     def check_attack_detection(self):
         join_index = ['epoch', 'batch', 'element']
@@ -207,6 +264,15 @@ class Logger:
         for plot_file in plots_files: plot_file.unlink()
     
     # Default methods for saving and loading
+
+    def _mk_dir(self, path, epoch=None, parents=True, exist_ok=True):
+        self.get_path(epoch=epoch, tail=path).mkdir(parents=parents, exist_ok=exist_ok)
+    
+    def _rm_dir(self, path, epoch=None):
+        self.get_path(epoch=epoch, tail=path).rmdir()
+    
+    def _rm_file(self, path, epoch=None):
+        self.get_path(epoch=epoch, tail=path).unlink()
     
     def _save_json(self, obj, path, epoch=None) -> None:
         path = self.get_path(epoch, tail=path)
@@ -239,11 +305,25 @@ class Logger:
         assert path.is_file(), f'File {path} does not exist.'
         return pd.read_csv(path, **kwargs)
     
+    def _save_pickle(self, obj, path, epoch=None) -> None:
+        path = self.get_path(epoch, tail=path)
+        with open(path, 'wb') as f:
+            pickle.dump(obj, f)
+    
+    def _load_pickle(self, path, epoch=None):
+        path = self.get_path(epoch, tail=path)
+        assert path.is_file(), f'File {path} does not exist.'
+        with open(path, 'rb') as f:
+            return pickle.load(f)
+    
     def _log_json(self, path, data: Dict) -> None:
         with open(path, 'a') as f:
             f.write(json.dumps(data) + '\n')
     
-    def _log_csv(self, path, data: List) -> None:
+    def _log_csv(self, path, data: List, bulk=False) -> None:
         with open(path, 'a') as f:
             writer = csv.writer(f)
-            writer.writerow(data)
+            if bulk:
+                writer.writerows(data)
+            else:
+                writer.writerow(data)

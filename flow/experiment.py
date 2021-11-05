@@ -42,10 +42,10 @@ class Experiment:
 
     TRAIN_METRICS = [
         'loss',
-        'total_training',
-        'raw_training',
-        'total_validation',
-        'raw_validation'
+        'raw_time_training',
+        'raw_time_validation',
+        'total_time_training',
+        'total_time_validation'
     ]
 
     def __init__(self, model_builder, optimizer_builder, loss_fn_builder, dataset, config_file, run_validation=True, **validation_args):
@@ -100,7 +100,7 @@ class Experiment:
         
         return exp
     
-    def set_validation_fn(self, validation_type, validation_method='', async_validators=0, **validation_kwargs):
+    def set_validation_fn(self, validation_type, validation_method='', async_validators=0, async_disk_queue=False, **validation_kwargs):
         SEPARATOR = '.'
 
         if validation_type == 'retrain':
@@ -118,6 +118,7 @@ class Experiment:
             return
         
         self.async_validators = async_validators
+        self.async_disk_queue = async_disk_queue
 
         log.debug(f'Set validation function to {self.validation_id}')
     
@@ -132,6 +133,7 @@ class Experiment:
 
         self.buffer = dict()
         self.time_tracker.clear()
+        self.time_tracker.init_timeframes()
     
     def init_model_optimizer_loss(self):
         self.model = self.model_builder()
@@ -144,7 +146,9 @@ class Experiment:
         numpy.random.seed(seed)
         log.debug(f'Set seed to {seed}')
 
-    def run(self, n_epochs, max_buffer_len=100, shuffle_batches=False, log_dir=None):
+    def run(self, n_epochs, max_buffer_len=100, shuffle_batches=False, log_dir=None, use_gpu=False):
+        torch.device('cuda' if use_gpu and torch.cuda.is_available() else 'cpu')
+        self.time_tracker.start_timeframe('training')
         self.model.train()
         activations = register_activation_hooks(self.model)
         gradients = register_gradient_hooks(self.model)
@@ -164,8 +168,8 @@ class Experiment:
                 validation_fn=self.validation_fn, 
                 model_builder=self.model_builder,
                 optimizer_builder=self.optimizer_builder,
-                loss_fn_builder=self.loss_fn_builder,
-                time_tracker=self.time_tracker)
+                loss_fn_builder=self.loss_fn_builder)
+                # time_tracker=self.time_tracker)
             self.async_queue = queue
 
         if shuffle_batches:
@@ -219,39 +223,36 @@ class Experiment:
                 if len(self.buffer) >= max_buffer_len or len(lst) == batch+1:
                     gc.collect() # Free unused memory
                     if self.run_validation:
-                        self.time_tracker.start('total_time_validation')
-                        self.time_tracker.start('raw_time_validation')
-                        self.time_tracker.stop('raw_time_validation')
                         self.validate(self.buffer)
-                        self.time_tracker.stop('total_time_validation')
                     self.buffer = dict()
                     gc.collect() # Free unused memory
+                    torch.device('cuda' if use_gpu and torch.cuda.is_available() else 'cpu')
                     # break
             
             self.logger.save_model(epoch, self.model)
             
             train_loss = train_loss/len(self.dataset.dataset)
-            epoch_total_time_training = self.time_tracker['total_time_training']
-            epoch_raw_time_training = self.time_tracker['raw_time_training']
-            epoch_total_time_validation = self.time_tracker['total_time_validation']
-            epoch_raw_time_validation = self.time_tracker['raw_time_validation']
 
             log.info(f'Epoch {epoch}  \t\tTraining Loss: {train_loss:.6f}')
-            log.info(f"Epoch Raw Times  \t{epoch_raw_time_training:.4f} training\t{epoch_raw_time_validation:.4f} validation")
-            log.info(f"Epoch Total Times\t{epoch_total_time_training:.4f} training\t{epoch_total_time_validation:.4f} validation")
+            log.info(f"Epoch Raw Times  \t{self.time_tracker.get('raw_time_training'):.4f} training\t{self.time_tracker.get('raw_time_validation'):.4f} validation")
+            log.info(f"Epoch Total Times\t{self.time_tracker.get('total_time_training'):.4f} training\t{self.time_tracker.get('total_time_validation'):.4f} validation")
 
             train_stats.loc[epoch] = [
                 train_loss,
-                epoch_total_time_training,
-                epoch_raw_time_training,
-                epoch_total_time_validation,
-                epoch_raw_time_validation
+                self.time_tracker.get('raw_time_training'),
+                self.time_tracker.get('raw_time_validation'),
+                self.time_tracker.get('total_time_training'),
+                self.time_tracker.get('total_time_validation')
             ]
 
             self.logger.save_stats(train_stats)
-            self.logger.save_times(self.time_tracker, epoch)
+            self.logger.log_times(epoch, self.time_tracker.total_times_history)
             self.time_tracker.clear()
         
+        self.time_tracker.stop_timeframe('training')
+        self.logger.save_timeframe('training', 
+        **self.time_tracker.get_timeframe('training', format="%Y-%m-%d %H:%M:%S"))
+
         del self.logger
         if self.async_validation:
             # Join Validators
@@ -261,7 +262,11 @@ class Experiment:
     def validate(self, buffer):
 
         if self.async_validation:
-            self.async_queue.put(buffer)
+            if self.async_disk_queue:
+                msg = self.logger.put_queue(buffer)
+            else:
+                msg = buffer
+            self.async_queue.put(msg)
         else:
             validation.validate_buffer(
                 buffer, 

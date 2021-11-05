@@ -3,7 +3,7 @@ import torch.nn.functional as F
 
 from flow.utils import TimeTracker, Logger, ValidationSet, vc, tensors_close, rand_true
 
-def validate_extract(validation_method, validation_set: ValidationSet, model, optimizer, loss_fn, next_model, time_tracker: TimeTracker, logger: Logger, val_prob=None, verbose=False, silent=False, index=None):
+def validate_extract(validation_method, validation_set: ValidationSet, model, optimizer, loss_fn, next_model, time_tracker: TimeTracker, logger: Logger, val_prob=None, verbose=False, silent=False, index=None, **method_args):
 
     # logger.log_attack_detection(validation_set.epoch, dict(msg="epoch: {}, batch: {}".format(*validation_set.get_id())))
 
@@ -23,7 +23,7 @@ def validate_extract(validation_method, validation_set: ValidationSet, model, op
         save_input[key] = torch.clone(data)
         if rand_true(val_prob):
             layer = getattr(model, key)
-            act_valid = validation_method(data, layer.weight.T, val[0], bias=layer.bias, rtol=1e-05, atol=1e-04)
+            act_valid = validation_method(data, layer.weight.T, val[0], bias=layer.bias, rtol=1e-05, atol=1e-04, **method_args)
             if not act_valid:
                 logger.log_attack_detection(
                     validation_set.epoch, 

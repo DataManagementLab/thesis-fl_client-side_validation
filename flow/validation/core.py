@@ -1,5 +1,7 @@
+import torch
 
 def validate_buffer(buffer, validation_fn, model_builder, optimizer_builder, loss_fn_builder, time_tracker, logger):
+    torch.device('cpu')
 
     time_tracker.start('total_time_validation')
 

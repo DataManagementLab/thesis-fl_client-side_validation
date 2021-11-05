@@ -54,5 +54,7 @@ if __name__ == "__main__":
     exp = Experiment.from_config(CONFIG_FILE)
     for i in range(args.repeat):
         log.info(f'Starting experiment {i+1} of {args.repeat}')
-        exp.run(training_cnf['n_epochs'], max_buffer_len=training_cnf['max_buffer_len'], shuffle_batches=training_cnf['shuffle_batches'], log_dir=training_cnf['log_dir'])
+        exp.run(training_cnf['n_epochs'], max_buffer_len=training_cnf['max_buffer_len'], shuffle_batches=training_cnf['shuffle_batches'], log_dir=training_cnf['log_dir'], use_gpu=training_cnf['use_gpu'])
+        # exp.run(**training_cnf)
         exp.stats()
+        exp.reset()

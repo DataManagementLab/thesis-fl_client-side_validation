@@ -180,9 +180,10 @@ class Plotter:
             for exp_path in exp_paths:
                 logger = Logger(base_path=el['log_dir'], exp_name=exp_path.name)
                 for epoch in range(1, logger.num_epochs):
-                    tt = logger.load_times(epoch)
                     for metric in plot['metrics']:
-                        stats_sum[metric][el['label']] += tt.get(metric, 0) / n_exp / logger.num_epochs
+                        tt = logger.get_times(epoch, metric).sum()[0]
+                        stats_sum[metric][el['label']] += tt / n_exp / logger.num_epochs
+                        # sys.exit(0)
 
         y_bottom = [0] * len(plot['data'])
         for metric, data in stats_sum.items():

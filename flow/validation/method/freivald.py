@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 global global_diff
 
-def freivald(A, B, C, bias=None, rtol=1e-05, atol=1e-08):
+def freivald(A, B, C, bias=None, rtol=1e-05, atol=1e-08, n_check=1):
     """
     Freivalds' algorithm to check if AB = C
 
@@ -12,13 +12,7 @@ def freivald(A, B, C, bias=None, rtol=1e-05, atol=1e-08):
     REF: https://discuss.pytorch.org/t/numerical-difference-in-matrix-multiplication-and-summation/28359
     """
     if bias is None: bias = 0.
-    r = torch.round(torch.rand(B.shape[1]))
-    ABr = torch.mv(A,torch.mv(B, r))
-    Cr = torch.mv(torch.sub(C, bias), r)
-    # rdiff = torch.max(ABr - Cr).item()
-    # global glob_rdiff
-    # if not 'glob_rdiff' in globals() or rdiff > glob_rdiff:
-    #     glob_rdiff = rdiff
-    #     print(glob_rdiff)
-    # return torch.allclose(ABr, Cr, rtol=rtol, atol=atol)
+    R = torch.round(torch.rand(B.shape[1], n_check))
+    ABr = torch.matmul(A, torch.matmul(B, R))
+    Cr = torch.matmul(torch.sub(C, bias), R)
     return tensors_close(ABr, Cr, rtol=rtol, atol=atol)
