@@ -77,13 +77,11 @@ class Logger:
         return self.get_path(epoch).is_dir()
 
     def save_model(self, epoch: int, model: Module) -> None:
-        self.get_path(epoch).mkdir(parents=True, exist_ok=True)
-        torch.save(model.state_dict(), self.get_path(epoch, self.MODEL_FILE))
+        self._mk_dir(epoch=epoch)
+        self._save_torch(model.state_dict(), self.MODEL_FILE, epoch=epoch)
 
     def load_model(self, epoch: int, model: Module) -> Module:
-        if not self.get_path(epoch, self.MODEL_FILE).exists(): raise FileExistsError(f'No file {self.MODEL_FILE} can be loaded for epoch {epoch} in {self.exp_str}')
-        model.load_state_dict(torch.load(self.get_path(epoch, self.MODEL_FILE)))
-        return model
+        return self._load_torch(self.MODEL_FILE, epoch=epoch)
     
     def set_lock(self, lock):
         self.lock = lock
@@ -119,10 +117,9 @@ class Logger:
             self.release_lock()
 
     def load_timeframes(self):
-        path = self.get_path(tail=self.TIME_FRAME_FILE)
         self.acquire_lock()
         try:
-            return self._load_csv(path)
+            return self._load_csv(Path(self.TIME_FRAME_FILE))
         finally:
             self.release_lock()
     
@@ -166,7 +163,7 @@ class Logger:
 
     def log_times(self, epoch, times_history: Dict):
         path = self.get_path(epoch, tail='times')
-        path.mkdir(exist_ok=True)
+        path.mkdir(parents=True, exist_ok=True)
         for key, val in times_history.items():
             kpath = path / f'{key}.csv'
             if not kpath.is_file(): kpath.touch()
@@ -177,18 +174,21 @@ class Logger:
             finally:
                 self.release_lock()
     
+    def times_exist(self, epoch, key) -> bool:
+        return self.get_path(epoch, tail=f'times/{key}.csv').is_file()
+    
     def get_times(self, epoch, key):
         return self._load_csv(f'times/{key}.csv', epoch, header=None, names=[key])
     
     def put_queue(self, obj) -> str:
         path = Path(self.QUEUE_DIR) / str(uuid.uuid4())
         self._mk_dir(path.parent)
-        self._save_pickle(obj, path)
+        self._save_torch(obj, path)
         return path.stem
     
     def get_queue(self, idx):
         path = Path(self.QUEUE_DIR) / idx
-        obj = self._load_pickle(path)
+        obj = self._load_torch(path)
         self._rm_file(path)
         return obj
     
@@ -265,7 +265,7 @@ class Logger:
     
     # Default methods for saving and loading
 
-    def _mk_dir(self, path, epoch=None, parents=True, exist_ok=True):
+    def _mk_dir(self, path='', epoch=None, parents=True, exist_ok=True):
         self.get_path(epoch=epoch, tail=path).mkdir(parents=parents, exist_ok=exist_ok)
     
     def _rm_dir(self, path, epoch=None):
@@ -304,6 +304,15 @@ class Logger:
         path = self.get_path(epoch, tail=path)
         assert path.is_file(), f'File {path} does not exist.'
         return pd.read_csv(path, **kwargs)
+    
+    def _save_torch(self, obj, path, epoch=None) -> None:
+        path = self.get_path(epoch=epoch, tail=path)
+        torch.save(obj, path)
+
+    def _load_torch(self, path, epoch=None, device='cpu'):
+        path = self.get_path(epoch, tail=path)
+        assert path.is_file(), f'File {path} does not exist.'
+        return torch.load(path, map_location=device)
     
     def _save_pickle(self, obj, path, epoch=None) -> None:
         path = self.get_path(epoch, tail=path)

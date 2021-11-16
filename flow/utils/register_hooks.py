@@ -11,7 +11,7 @@ def register_activation_hooks(model, module_types=[nn.Linear, nn.Conv2d]):
     activations = defaultdict(list)
 
     def save_activation(name, module, input, output): 
-        activations[name].append(output.detach().clone())
+        activations[name].append(output.detach().clone().cpu())
 
     for name, module in model.named_modules():
         if type(module) in module_types:
@@ -24,7 +24,7 @@ def register_gradient_hooks(model, module_types=[nn.Linear, nn.Conv2d]):
     gradients = defaultdict(list)
 
     def save_gradients(name, module, grad_input, grad_output):
-        gradients[name].append(grad_input[0].detach().clone())
+        gradients[name].append(grad_input[0].detach().clone().cpu())
 
     for name, module in model.named_modules():
         if type(module) in module_types:
