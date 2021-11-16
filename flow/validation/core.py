@@ -1,7 +1,7 @@
 import torch, tracemalloc
-
+# from memory_profiler import profile
+# @profile
 def validate_buffer(buffer, validation_fn, model_builder, optimizer_builder, loss_fn_builder, time_tracker, logger):
-    torch.device('cpu')
 
     time_tracker.start('total_time_validation')
 
@@ -9,12 +9,15 @@ def validate_buffer(buffer, validation_fn, model_builder, optimizer_builder, los
     next_model = model_builder()
     optimizer = optimizer_builder(model.parameters())
     loss_fn = loss_fn_builder()
+    device = torch.device("cpu")
     
     tracemalloc.start()
     for index, vset in buffer.items():
 
         model.load_state_dict(vset.get_model_start())
+        model.to(device)
         next_model.load_state_dict(vset.get_model_end())
+        next_model.to(device)
         optimizer.load_state_dict(vset.get_optimizer())
 
         time_tracker.start('raw_time_validation')

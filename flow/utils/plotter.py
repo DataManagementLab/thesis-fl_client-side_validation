@@ -4,7 +4,7 @@ from numpy import imag, zeros
 from torch.nn.modules.module import T
 from torch.utils.data import DataLoader
 from typing import List, Optional
-import sys, yaml
+import sys, yaml, time
 from yaml import Loader
 import pandas as pd
 
@@ -181,7 +181,10 @@ class Plotter:
                 logger = Logger(base_path=el['log_dir'], exp_name=exp_path.name)
                 for epoch in range(1, logger.num_epochs):
                     for metric in plot['metrics']:
-                        tt = logger.get_times(epoch, metric).sum()[0]
+                        if logger.times_exist(epoch, metric):
+                            tt = logger.get_times(epoch, metric).sum()[0]
+                        else: 
+                            tt = 0.0
                         stats_sum[metric][el['label']] += tt / n_exp / logger.num_epochs
                         # sys.exit(0)
 
@@ -189,6 +192,102 @@ class Plotter:
         for metric, data in stats_sum.items():
             ax.bar(data.keys(), data.values(), label=metric, bottom=y_bottom)
             y_bottom = [ a+b for a, b in zip(y_bottom, data.values())]
+
+        ax.legend()
+        if plot.get('grid') == True: ax.grid()
+        ax.set_xlabel(plot.get('xlabel'))
+        ax.set_ylabel(plot.get('ylabel'))
+        ax.set_xlim(plot.get('xmin'), plot.get('xmax'))
+        ax.set_ylim(plot.get('ymin'), plot.get('ymax'))
+        ax.set_title(plot.get('title'))
+        plot_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(plot_path)
+        plt.close(fig)
+    
+    @classmethod
+    def plot_timeframes(self, plot_cnf: Path) -> None:
+        assert plot_cnf.is_file(), 'Plot config file does not exist.'
+        with open(plot_cnf, 'r') as f:
+            plot = yaml.load(f, Loader)
+        plot_path = Path(plot.get('log_dir')) / plot.get('plot_dir') / f"{plot.get('name')}.png"
+        fig, ax = plt.subplots()
+        timeframes_dict = dict()
+        def strpt(string):
+            return time.mktime(time.strptime(string, '%Y-%m-%d %H:%M:%S'))
+        for el in plot['data']:
+            exp_paths = list(Path(el['log_dir']).glob('experiment_*'))
+            n_exp = len(exp_paths)
+            timeframes_dict[el['label']] = dict()
+            for exp_path in exp_paths:
+                logger = Logger(base_path=el['log_dir'], exp_name=exp_path.name)
+                timeframes = logger.load_timeframes()
+                timeframes[['time_from', 'time_to']] = timeframes[['time_from', 'time_to']].applymap(strpt)
+                min_time = timeframes['time_from'].min()
+                timeframes[['time_from', 'time_to']] = timeframes[['time_from', 'time_to']] - min_time
+                training_timeframe = timeframes.loc[timeframes['key'].str.contains('training')]
+                validation_timeframe = timeframes.loc[timeframes['key'].str.contains('validation')]
+                n_val = validation_timeframe.count()[0]
+
+                if not 'training_from' in timeframes_dict[el['label']]: timeframes_dict[el['label']]['training_from'] = 0
+                if not 'training_to' in timeframes_dict[el['label']]: timeframes_dict[el['label']]['training_to'] = 0
+                
+                training_from = training_timeframe['time_from'].mean()
+                training_to = training_timeframe['time_to'].mean()
+                timeframes_dict[el['label']]['training_from'] += training_from / n_exp
+                timeframes_dict[el['label']]['training_to'] += training_to / n_exp
+                
+                if n_val > 0:
+                    if not 'validation_from' in timeframes_dict[el['label']]: timeframes_dict[el['label']]['validation_from'] = 0
+                    if not 'validation_to' in timeframes_dict[el['label']]: timeframes_dict[el['label']]['validation_to'] = 0
+
+                    validation_from = validation_timeframe['time_from'].mean()
+                    validation_to = validation_timeframe['time_to'].mean()
+                    timeframes_dict[el['label']]['validation_from'] += validation_from / n_exp
+                    timeframes_dict[el['label']]['validation_to'] += validation_to / n_exp        
+
+        bar_width = plot.get('bar_width', 0.2)
+        bar_space = plot.get('bar_space', 0.1)
+        label_train = plot.get('label_train', 'training')
+        label_valid = plot.get('label_valid', 'validation')
+        label_synct = plot.get('label_synct', 'train & valid')
+        color_train = plot.get('color_train', 'lightsteelblue')
+        color_valid = plot.get('color_valid', 'salmon')
+        color_synct = plot.get('colog_synct', 'peachpuff')
+
+        x = 0
+        ticks_loc = []
+        ticks_lab = []
+        first_train = True
+        first_valid = True
+        first_synct = True
+
+        for i, (k, v) in enumerate(timeframes_dict.items()):
+            plt_training = 'training_from' in v and 'training_to' in v
+            plt_validation = 'validation_from' in v and 'validation_to' in v
+            plt_synchronic = plt_training and not plt_validation
+            d = bar_width/2 if plt_training and plt_validation else 0
+            x += bar_space + bar_width/2 + d
+            ticks_loc.append(x)
+            ticks_lab.append(k)
+            if plt_synchronic:
+                ax.barh(x+d, v['training_to'], left=v['training_from'], height=bar_width, color=color_synct, align='center', label=label_synct)
+                if first_synct:
+                    label_synct = None
+                    first_synct = False
+            elif plt_training:
+                ax.barh(x+d, v['training_to'], left=v['training_from'], height=bar_width, color=color_train, align='center', label=label_train)
+                if first_train:
+                    label_train = None
+                    first_train = False
+            if plt_validation:
+                ax.barh(x-d, v['validation_to'], left=v['validation_from'], height=bar_width, color=color_valid, align='center', label=label_valid)
+                if first_valid:
+                    label_valid = None
+                    first_valid = False
+            x += bar_width/2 + d
+        
+        ax.set_yticks(ticks_loc)
+        ax.set_yticklabels(ticks_lab)
 
         ax.legend()
         if plot.get('grid') == True: ax.grid()

@@ -1,7 +1,7 @@
 
 from flow.utils import Logger
 
-def targeted_attack(model, optimizer, loss_fn, data, target, epoch, batch, logger: Logger, boosting=False, boost_factor=10):
+def targeted_attack(model, optimizer, loss_fn, data, target, epoch, batch, device, logger: Logger, boosting=False, boost_factor=10):
     target, malicious = target
     malicious = malicious.all().item()
     optimizer.zero_grad()
