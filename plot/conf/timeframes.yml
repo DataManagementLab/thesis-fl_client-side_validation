@@ -1,0 +1,36 @@
+---
+log_dir: thesis_carsten_01
+plot_dir: testing_plots
+name: total_timeframes
+title: comparison of validation methods
+# xlabel: epochs
+xlabel: time (sec)
+# ymin: 0
+# ymax: 1
+# grid: True
+bar_width: 0.2
+bar_space: 0.1
+label_train: 'training'
+label_valid: 'validation'
+label_synct: 'train & valid'
+color_train: 'lightsteelblue'
+color_valid: 'salmon'
+color_synct: 'peachpuff'
+metrics:
+- total_time_training
+- total_time_validation
+# - validate_activations
+# - validate_gradients
+# - validate_loss
+# - validate_weights
+# - validate_retrain
+data:
+- log_dir: times_async_cpu
+  label: async cpu
+- log_dir: times_async_gpu
+  label: async gpu
+- log_dir: times_sync_cpu
+  label: sync cpu
+- log_dir: times_sync_gpu
+  label: sync gpu
+...

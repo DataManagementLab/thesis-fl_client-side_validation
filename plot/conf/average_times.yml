@@ -1,7 +1,7 @@
 ---
 log_dir: thesis_carsten_01
 plot_dir: testing_plots
-name: raw_times_test_sp_2
+name: raw_times_sync_async_gpu_cpu
 title: comparison of validation methods
 # xlabel: epochs
 ylabel: time / epoch (sec)
@@ -11,16 +11,22 @@ ylabel: time / epoch (sec)
 metrics:
 - raw_time_training
 - raw_time_validation
+# - total_time_training
+# - total_time_validation
 # - validate_activations
 # - validate_gradients
 # - validate_loss
 # - validate_weights
 # - validate_retrain
 data:
-- log_dir: times_test_tt02
-  label: parallel 9x
-- log_dir: times_test_tt04
-  label: parallel 9x mem
+- log_dir: times_async_cpu
+  label: async cpu
+- log_dir: times_async_gpu
+  label: async gpu
+- log_dir: times_sync_cpu
+  label: sync cpu
+- log_dir: times_sync_gpu
+  label: sync gpu 
 # - log_dir: times_test_tt01
 #   label: sequential 9x
 # - log_dir: times_test_tt03
