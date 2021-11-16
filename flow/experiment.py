@@ -13,7 +13,7 @@
 
 # PROFILER
 import cProfile
-import multiprocessing
+import torch.multiprocessing as multiprocessing
 from numpy import real
 
 # LIB IMPORTS
@@ -31,7 +31,7 @@ import logging as log
 log.basicConfig(
     format='%(asctime)s [%(levelname)s] %(message)s', 
     datefmt='%m/%d/%Y %H:%M', 
-    level=log.DEBUG)
+    level=log.INFO)
 
 # MODULE IMPORTS
 from flow import training, validation, datasets, models
@@ -60,6 +60,8 @@ class Experiment:
         self.run_validation = run_validation
         if run_validation:
             self.set_validation_fn(**validation_args)
+        else:
+            self.async_validators = 0
 
         self.reset()
         log.debug('Experiment initialized.')
@@ -75,10 +77,10 @@ class Experiment:
 
         # MODEL, OPTIMIZER, LOSS
         log.info('Creating Model')
-        model_builder = partial_class(getattr(models, model_cnf['type']), **model_cnf['params'])
+        model_builder = partial_class(model_cnf['type'], getattr(models, model_cnf['type']), **model_cnf['params'])
 
         log.info('Creating Optimizer and Loss')
-        optimizer_builder = partial_class(getattr(torch.optim, optimizer_cnf['type']), **optimizer_cnf['params'])
+        optimizer_builder = partial_class(optimizer_cnf['type'], getattr(torch.optim, optimizer_cnf['type']), **optimizer_cnf['params'])
         loss_fn_builder = getattr(torch.nn, loss_fn_cnf['type'])
         
         log.info('Creating Experiment')
@@ -147,9 +149,12 @@ class Experiment:
         log.debug(f'Set seed to {seed}')
 
     def run(self, n_epochs, max_buffer_len=100, shuffle_batches=False, log_dir=None, use_gpu=False):
-        torch.device('cuda' if use_gpu and torch.cuda.is_available() else 'cpu')
+        device = torch.device('cuda' if use_gpu and torch.cuda.is_available() else 'cpu')
+        log.info(f'Running in device: {device}')
+
         self.time_tracker.start_timeframe('training')
         self.model.train()
+        self.model = self.model.to(device)
         activations = register_activation_hooks(self.model)
         gradients = register_gradient_hooks(self.model)
 
@@ -166,8 +171,8 @@ class Experiment:
                 self.async_validators,
                 logger=self.logger,
                 validation_fn=self.validation_fn, 
-                model_builder=self.model_builder,
-                optimizer_builder=self.optimizer_builder,
+                # model_builder=self.model_builder,
+                # optimizer_builder=self.optimizer_builder,
                 loss_fn_builder=self.loss_fn_builder)
                 # time_tracker=self.time_tracker)
             self.async_queue = queue
@@ -195,18 +200,18 @@ class Experiment:
                 vset.set_model_start(self.model)
                 vset.set_optimizer(self.optimizer)
                 self.time_tracker.start('raw_time_training')
-                loss = self.training_fn(self.model, self.optimizer, self.loss_fn, data, target, epoch, batch, self.logger, **self.training_params)
+                loss = self.training_fn(self.model, self.optimizer, self.loss_fn, data, target, epoch, batch, device, self.logger, **self.training_params)
                 self.time_tracker.stop('raw_time_training')
 
                 # GET GRADIENTS
                 for key in activations.keys():
                     l =  getattr(self.model, key)
                     if len(gradients[key]) == 0: gradients[key].append(None)
-                    gradients[key].append(l.weight.grad.detach().clone())
-                    gradients[key].append(l.bias.grad.detach().clone())
+                    gradients[key].append(l.weight.grad.detach().clone().cpu())
+                    gradients[key].append(l.bias.grad.detach().clone().cpu())
 
                 # SAVE TO SET
-                vset.set_loss(loss.detach().clone())
+                vset.set_loss(loss.detach().clone().cpu())
                 vset.set_activations(activations)
                 vset.set_gradients(gradients)
                 vset.set_model_end(self.model)

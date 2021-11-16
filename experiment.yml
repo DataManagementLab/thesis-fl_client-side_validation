@@ -29,17 +29,17 @@ training:
   n_epochs: 5 # 20
   max_buffer_len: 50
   shuffle_batches: False
-  log_dir: times_test #_tt04
-  # training_method: no_attack
-  # training_params: {}
+  log_dir: times_test
+  training_method: no_attack
+  training_params: {}
   # training_method: targeted_attack
   # training_params:
   #   boosting: True
   #   boost_factor: 50
-  training_method: untargeted_attack
-  training_params:
-    frequency: 0.1
-    scale: 0.25
+  # training_method: untargeted_attack
+  # training_params:
+  #   frequency: 0.1
+  #   scale: 0.25
 validation:
   run_validation: True
   async_validators: 0

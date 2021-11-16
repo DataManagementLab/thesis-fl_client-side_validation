@@ -1,5 +1,7 @@
 from flow.utils import Logger
-from multiprocessing import Process, Queue, Lock
+from torch.multiprocessing import Process, Queue, Lock, set_start_method
+try: set_start_method('spawn')
+except RuntimeError: pass
 from .validation_process import validation_process, consumer_process
 from .process_logger import get_process_logger
 
