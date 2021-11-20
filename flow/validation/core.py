@@ -1,38 +1,37 @@
-import torch, tracemalloc
-# from memory_profiler import profile
-# @profile
-def validate_buffer(buffer, validation_fn, model_builder, optimizer_builder, loss_fn_builder, time_tracker, logger):
+import tracemalloc, copy
+
+from flow.utils import ValidationBuffer
+
+def validate_buffer(buffer: ValidationBuffer, validation_fn, model, optimizer, loss_fn, time_tracker, logger):
 
     time_tracker.start('total_time_validation')
 
-    model = model_builder()
-    next_model = model_builder()
-    optimizer = optimizer_builder(model.parameters())
-    loss_fn = loss_fn_builder()
-    device = torch.device("cpu")
+    next_model = copy.deepcopy(model)
+    init_model_state = buffer.get_init_model_state()
     
-    tracemalloc.start()
+    # tracemalloc.start()
     for index, vset in buffer.items():
 
-        model.load_state_dict(vset.get_model_start())
-        model.to(device)
-        next_model.load_state_dict(vset.get_model_end())
-        next_model.to(device)
-        optimizer.load_state_dict(vset.get_optimizer())
+        model.load_state_dict(init_model_state)
+        next_model.load_state_dict(vset.get_model_state())
+        optimizer.load_state_dict(vset.get_optimizer_state())
 
         time_tracker.start('raw_time_validation')
         validation_fn(
-            model=model, 
-            optimizer=optimizer, 
-            loss_fn=loss_fn, 
-            next_model=next_model,
-            time_tracker=time_tracker,
-            logger=logger,
             index=index,
-            validation_set=vset
+            validation_set=vset,
+            model=model, 
+            optimizer=optimizer,
+            next_model=next_model,
+            loss_fn=loss_fn,
+            time_tracker=time_tracker,
+            logger=logger
         )
         time_tracker.stop('raw_time_validation')
-    print('mem after:', tracemalloc.get_traced_memory())
-    tracemalloc.stop()
+        
+        init_model_state = vset.get_model_state()
+    
+    # print('mem after:', tracemalloc.get_traced_memory())
+    # tracemalloc.stop()
     
     time_tracker.stop('total_time_validation')

@@ -1,6 +1,8 @@
 from flow.utils import Logger
-from torch.multiprocessing import Process, Queue, Lock, set_start_method
+from torch.multiprocessing import Process, Queue, Lock, set_start_method, get_sharing_strategy, set_sharing_strategy
 try: set_start_method('spawn')
+except RuntimeError: pass
+try: set_sharing_strategy('file_system')
 except RuntimeError: pass
 from .validation_process import validation_process, consumer_process
 from .process_logger import get_process_logger

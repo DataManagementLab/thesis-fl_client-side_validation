@@ -6,13 +6,13 @@ def targeted_attack(model, optimizer, loss_fn, data, target, epoch, batch, devic
     malicious = malicious.all().item()
     optimizer.zero_grad()
     if malicious and boosting:
-        # print('BOOSTING')
         orig_lr = optimizer.param_groups[0]['lr']
         optimizer.param_groups[0]['lr'] *= boost_factor
-        if False: print(f"lr_orig: {orig_lr}\tlr_now: {optimizer.param_groups[0]['lr']}")
-    output = model(data)
-    loss = loss_fn(output, target)
+    output = model(data.to(device).view(-1, 28 * 28))
+    loss = loss_fn(output, target.to(device))
     loss.backward()
     optimizer.step()
-    if malicious and boosting: optimizer.param_groups[0]['lr'] = orig_lr
+    if malicious and boosting: 
+        optimizer.param_groups[0]['lr'] = orig_lr
+        logger.log_attack_application(epoch, batch, 'all', 'GRADIENT_BOOSTING')
     return loss

@@ -1,16 +1,14 @@
 import torch.nn as nn
 from collections import defaultdict
 from functools import partial
+import torch
 
 # Inspired by https://gist.github.com/Tushar-N/680633ec18f5cb4b47933da7d10902af
-
-# temp imports
-import sys
 
 def register_activation_hooks(model, module_types=[nn.Linear, nn.Conv2d]):
     activations = defaultdict(list)
 
-    def save_activation(name, module, input, output): 
+    def save_activation(name, module, input, output):
         activations[name].append(output.detach().clone().cpu())
 
     for name, module in model.named_modules():

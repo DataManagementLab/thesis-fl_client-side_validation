@@ -13,11 +13,13 @@
 
 # PROFILER
 import cProfile
+from copy import deepcopy
 import torch.multiprocessing as multiprocessing
 from numpy import real
 
 # LIB IMPORTS
 import torch, numpy
+import torch.nn as nn
 import yaml, math, random
 import pandas as pd
 import time, gc, sys
@@ -27,6 +29,8 @@ from pathlib import Path
 
 # INIT LOGGER
 import logging as log
+
+from flow.utils.validation_buffer import ValidationBuffer
 
 log.basicConfig(
     format='%(asctime)s [%(levelname)s] %(message)s', 
@@ -133,7 +137,6 @@ class Experiment:
     def reset(self):
         self.init_model_optimizer_loss()
 
-        self.buffer = dict()
         self.time_tracker.clear()
         self.time_tracker.init_timeframes()
     
@@ -141,6 +144,10 @@ class Experiment:
         self.model = self.model_builder()
         self.optimizer = self.optimizer_builder(self.model.parameters())
         self.loss_fn = self.loss_fn_builder()
+
+        self.val_model = self.model_builder()
+        self.val_optimizer = self.optimizer_builder(self.val_model.parameters())
+        self.val_loss_fn = self.loss_fn_builder()
 
     def seed(self, seed):
         torch.manual_seed(seed)
@@ -150,35 +157,35 @@ class Experiment:
 
     def run(self, n_epochs, max_buffer_len=100, shuffle_batches=False, log_dir=None, use_gpu=False):
         device = torch.device('cuda' if use_gpu and torch.cuda.is_available() else 'cpu')
-        log.info(f'Running in device: {device}')
+        log.info(f'Running on device: {device}')
 
         self.time_tracker.start_timeframe('training')
+
+        # PREPARE MODEL FOR TRAINING
+        self.model.to(device)
         self.model.train()
-        self.model = self.model.to(device)
         activations = register_activation_hooks(self.model)
         gradients = register_gradient_hooks(self.model)
 
+        # INITIALIZE LOG DIRECTORY
         self.logger = Logger(log_dir)
-        self.logger.copy_config(self.config_file)
-
         assert not self.logger.epoch_exists(0)
+        self.logger.copy_config(self.config_file)
         self.logger.save_model(epoch=0, model=self.model)
         train_stats = pd.DataFrame(columns=self.TRAIN_METRICS)
 
+        # LAUNCH VALIDATORS, LOCK AND QUEUE
         if self.async_validation:
-            # Launch Validators, Lock and Queue
             consumers, queue, lock = start_validators(
                 self.async_validators,
                 logger=self.logger,
-                validation_fn=self.validation_fn, 
-                # model_builder=self.model_builder,
-                # optimizer_builder=self.optimizer_builder,
-                loss_fn_builder=self.loss_fn_builder)
-                # time_tracker=self.time_tracker)
+                validation_fn=self.validation_fn,
+                loss_fn=self.val_loss_fn)
             self.async_queue = queue
 
+        # SHUFFLE BATCHES IF REQUIRED
         if shuffle_batches:
-            log.debug('Shuffle batch iterator')
+            log.debug('Shuffle batches')
             lst = list(iter(self.dataset))
         else:
             lst = self.dataset
@@ -187,8 +194,10 @@ class Experiment:
 
             assert not self.logger.epoch_exists(epoch), f'Can not overwrite existing epoch {epoch}'
 
-            if shuffle_batches: random.shuffle(lst)
             train_loss = 0.
+            if shuffle_batches: random.shuffle(lst)
+            buffer = ValidationBuffer(epoch, max_buffer_len)
+            buffer.set_init_model_state(self.model)
             
             for batch, (data, target) in enumerate(lst):
 
@@ -197,45 +206,48 @@ class Experiment:
                 # SAVE TO SET
                 vset = ValidationSet(epoch, batch)
                 vset.set_data(data, target)
-                vset.set_model_start(self.model)
-                vset.set_optimizer(self.optimizer)
+                vset.set_optimizer_state(self.optimizer)
                 self.time_tracker.start('raw_time_training')
                 loss = self.training_fn(self.model, self.optimizer, self.loss_fn, data, target, epoch, batch, device, self.logger, **self.training_params)
                 self.time_tracker.stop('raw_time_training')
 
                 # GET GRADIENTS
-                for key in activations.keys():
-                    l =  getattr(self.model, key)
-                    if len(gradients[key]) == 0: gradients[key].append(None)
-                    gradients[key].append(l.weight.grad.detach().clone().cpu())
-                    gradients[key].append(l.bias.grad.detach().clone().cpu())
+                module_types = [nn.Linear, nn.Conv2d]
+                for name, module in self.model.named_modules():
+                    if type(module) in module_types:
+                        if not gradients[name]: gradients[name].append(None)
+                        gradients[name].append(module.weight.grad.detach().cpu())
+                        gradients[name].append(module.bias.grad.detach().cpu())
 
-                # SAVE TO SET
-                vset.set_loss(loss.detach().clone().cpu())
-                vset.set_activations(activations)
+                # for key in activations.keys():
+                #     l =  getattr(self.model, key)
+                #     if len(gradients[key]) == 0: gradients[key].append(None)
+                #     gradients[key].append(l.weight.grad.detach().clone().cpu())
+                #     gradients[key].append(l.bias.grad.detach().clone().cpu())
+
+                # SAVE TO BUFFER
+                vset.set_loss(loss)
                 vset.set_gradients(gradients)
-                vset.set_model_end(self.model)
-                self.buffer[batch] = vset
+                vset.set_activations(activations)
+                vset.set_model_state(self.model)
+                buffer.add(batch, vset)
 
-                # EMPTY ACT & GRAD FOR NEXT BATCH
-                for key in list(activations.keys()): del activations[key]
-                for key in list(gradients.keys()): del gradients[key]
+                # EMPTY ACTIVATIONS & GRADIENTS FOR NEXT BATCH
+                activations.clear()
+                gradients.clear()
                 
                 train_loss += loss.item()*data.size(0)
-
                 self.time_tracker.stop('total_time_training')
 
-                if len(self.buffer) >= max_buffer_len or len(lst) == batch+1:
+                if buffer.full() or len(lst) == batch+1:
                     gc.collect() # Free unused memory
                     if self.run_validation:
-                        self.validate(self.buffer)
-                    self.buffer = dict()
+                        self.validate(buffer)
+                    buffer = ValidationBuffer(epoch, max_buffer_len)
+                    buffer.set_init_model_state(self.model)
                     gc.collect() # Free unused memory
-                    torch.device('cuda' if use_gpu and torch.cuda.is_available() else 'cpu')
-                    # break
             
             self.logger.save_model(epoch, self.model)
-            
             train_loss = train_loss/len(self.dataset.dataset)
 
             log.info(f'Epoch {epoch}  \t\tTraining Loss: {train_loss:.6f}')
@@ -256,7 +268,7 @@ class Experiment:
         
         self.time_tracker.stop_timeframe('training')
         self.logger.save_timeframe('training', 
-        **self.time_tracker.get_timeframe('training', format="%Y-%m-%d %H:%M:%S"))
+            **self.time_tracker.get_timeframe('training', format="%Y-%m-%d %H:%M:%S"))
 
         del self.logger
         if self.async_validation:
@@ -275,10 +287,10 @@ class Experiment:
         else:
             validation.validate_buffer(
                 buffer, 
-                self.validation_fn, 
-                self.model_builder,
-                self.optimizer_builder,
-                self.loss_fn_builder,
+                self.validation_fn,
+                self.val_model,
+                self.val_optimizer,
+                self.val_loss_fn,
                 self.time_tracker,
                 self.logger)
     
