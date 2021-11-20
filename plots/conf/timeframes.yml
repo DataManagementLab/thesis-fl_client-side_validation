@@ -1,7 +1,7 @@
 ---
-log_dir: thesis_carsten_01
-plot_dir: testing_plots
-name: total_timeframes
+log_dir: thesis_plots
+plot_dir: evaluation_test
+name: total_timeframes_freivalds
 title: comparison of validation methods
 # xlabel: epochs
 xlabel: time (sec)
@@ -25,12 +25,18 @@ metrics:
 # - validate_weights
 # - validate_retrain
 data:
-- log_dir: times_async_cpu
-  label: async cpu
-- log_dir: times_async_gpu
-  label: async gpu
-- log_dir: times_sync_cpu
-  label: sync cpu
-- log_dir: times_sync_gpu
-  label: sync gpu
+- log_dir: times_test_freivalds_async_mem
+  label: async mem
+- log_dir: times_test_freivalds_async_disk
+  label: async disk
+- log_dir: times_test_freivalds_sync
+  label: sync
+# - log_dir: times_async_cpu
+#   label: async cpu
+# - log_dir: times_async_gpu
+#   label: async gpu
+# - log_dir: times_sync_cpu
+#   label: sync cpu
+# - log_dir: times_sync_gpu
+#   label: sync gpu
 ...
