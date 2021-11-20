@@ -30,7 +30,7 @@ from pathlib import Path
 # INIT LOGGER
 import logging as log
 
-from flow.utils.validation_buffer import ValidationBuffer
+from cliva_fl.utils.validation_buffer import ValidationBuffer
 
 log.basicConfig(
     format='%(asctime)s [%(levelname)s] %(message)s', 
@@ -38,9 +38,9 @@ log.basicConfig(
     level=log.INFO)
 
 # MODULE IMPORTS
-from flow import training, validation, datasets, models
-from flow.utils import ValidationSet, Logger, TimeTracker, logger, register_activation_hooks, register_gradient_hooks, partial_class, load_config, time_tracker
-from flow.multiprocessing import start_validators, stop_validators
+from cliva_fl import training, validation, datasets, models
+from cliva_fl.utils import ValidationSet, Logger, TimeTracker, logger, register_activation_hooks, register_gradient_hooks, partial_class, load_config, time_tracker
+from cliva_fl.multiprocessing import start_validators, stop_validators
 
 class Experiment:
 

@@ -1,4 +1,4 @@
-from flow.utils import Logger
+from cliva_fl.utils import Logger
 from torch.multiprocessing import Process, Queue, Lock, set_start_method, get_sharing_strategy, set_sharing_strategy
 try: set_start_method('spawn')
 except RuntimeError: pass

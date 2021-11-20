@@ -1,5 +1,5 @@
 import torch, sys
-from flow.utils import tensors_close
+from cliva_fl.utils import tensors_close
 import torch.nn.functional as F
 
 def gvfa(A, B, C, bias=None, rtol=1e-05, atol=1e-08, float_type=torch.float32):

@@ -1,5 +1,5 @@
 import torch, sys
-from flow.utils import tensors_close
+from cliva_fl.utils import tensors_close
 import torch.nn.functional as F
 
 global global_diff

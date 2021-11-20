@@ -1,5 +1,5 @@
 import sys, argparse
-from flow.utils import Logger, Plotter
+from cliva_fl.utils import Logger, Plotter
 from pathlib import Path
 from datetime import datetime
 

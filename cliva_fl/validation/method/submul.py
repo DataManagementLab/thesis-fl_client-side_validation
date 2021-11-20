@@ -1,5 +1,5 @@
 import torch, numpy, sys, time
-from flow.utils import tensors_close
+from cliva_fl.utils import tensors_close
 
 def submul(A, B, C, bias=None, rtol=1e-05, atol=1e-08, frac=.5, shuffle=False):
     """

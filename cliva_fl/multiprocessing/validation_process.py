@@ -2,9 +2,9 @@ import time, os, random, torch, gc
 
 from pathlib import Path
 from .process_logger import get_process_logger
-from flow import models
-from flow.validation import validate_buffer
-from flow.utils import TimeTracker, Logger, partial_class
+from cliva_fl import models
+from cliva_fl.validation import validate_buffer
+from cliva_fl.utils import TimeTracker, Logger, partial_class
 
 
 def validation_process(queue, logger: Logger, **validation_kwargs):

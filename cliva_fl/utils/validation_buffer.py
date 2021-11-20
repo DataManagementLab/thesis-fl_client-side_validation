@@ -1,5 +1,5 @@
 
-from flow.utils import ValidationSet
+from cliva_fl.utils import ValidationSet
 
 class ValidationBuffer:
 

@@ -1,6 +1,6 @@
 import torch
-from flow.utils import Logger
-from flow.utils.model_poisoning import gradient_noise
+from cliva_fl.utils import Logger
+from cliva_fl.utils.model_poisoning import gradient_noise
 
 def untargeted_attack(model, optimizer, loss_fn, data, target, epoch, batch, device, logger: Logger, frequency=0.1, scale=1/5):
     assert 0 < frequency < 1 and 0 < scale

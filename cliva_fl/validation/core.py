@@ -1,6 +1,6 @@
 import tracemalloc, copy
 
-from flow.utils import ValidationBuffer
+from cliva_fl.utils import ValidationBuffer
 
 def validate_buffer(buffer: ValidationBuffer, validation_fn, model, optimizer, loss_fn, time_tracker, logger):
 

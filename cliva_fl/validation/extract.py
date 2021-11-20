@@ -2,7 +2,7 @@ import torch, sys, time
 from torch import nn
 import torch.nn.functional as F
 
-from flow.utils import TimeTracker, Logger, ValidationSet, vc, tensors_close, rand_true
+from cliva_fl.utils import TimeTracker, Logger, ValidationSet, vc, tensors_close, rand_true
 
 def validate_extract(validation_method, validation_set: ValidationSet, model, optimizer, loss_fn, next_model, time_tracker: TimeTracker, logger: Logger, val_prob=None, verbose=False, silent=False, index=None, **method_args):
 

@@ -15,7 +15,7 @@ import yaml, argparse
 import logging as log
 from pathlib import Path
 
-from flow.experiment import Experiment
+from cliva_fl.experiment import Experiment
 
 # ARGUMENT PARSING
 

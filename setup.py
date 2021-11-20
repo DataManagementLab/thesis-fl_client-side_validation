@@ -3,7 +3,7 @@ from codecs import open
 from os import path
 
 __version__ = '0.0.1'
-__package__ = 'flow'
+__package__ = 'cliva_fl'
 
 here = path.abspath(path.dirname(__file__))
 
@@ -12,7 +12,7 @@ with open(path.join(here, 'requirements.txt'), encoding='utf-8') as f:
     for line in f:
         requires_list.append(str(line))
 
-long_description = 'flow is a library that was developed during a master thesis' \
+long_description = 'cliva_fl is a library that was developed during a master thesis' \
                    ' with the goal of leveraging client-side validation of the' \
                    ' training process to eliminate model poisoning attacks in federated learning.'
 

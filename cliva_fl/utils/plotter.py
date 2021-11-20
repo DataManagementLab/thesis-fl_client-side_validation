@@ -13,8 +13,8 @@ import torch.nn as nn
 
 import matplotlib.pyplot as plt
 
-from flow.utils import Logger
-from flow import models, datasets, utils
+from cliva_fl.utils import Logger
+from cliva_fl import models, datasets, utils
 
 class Plotter:
 

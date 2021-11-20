@@ -1,4 +1,4 @@
-from flow.utils import Logger
+from cliva_fl.utils import Logger
 
 def no_attack(model, optimizer, loss_fn, data, target, epoch, batch, device, logger: Logger):
     optimizer.zero_grad()
