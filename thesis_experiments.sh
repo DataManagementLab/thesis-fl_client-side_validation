@@ -1,6 +1,6 @@
 #!/bin/bash
 
-N=1
+N=5
 
 echo "===== TIME EXPERIMENTS ====="
 echo "===== TIME EXPERIMENTS | Freivald ====="

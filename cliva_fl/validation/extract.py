@@ -179,7 +179,7 @@ def validate_extract(validation_method, validation_set: ValidationSet, model, op
                 time_tracker.start('validate_weights_allclose')
                 # W_valid = torch.allclose(new_layer.weight, next_layer.weight)
                 # b_valid = torch.allclose(new_layer.bias, next_layer.bias)
-                W_valid = tensors_close_sum(module.weight, next_module.weight)
+                W_valid = tensors_close(module.weight, next_module.weight)
                 b_valid = tensors_close(module.bias, next_module.bias)
                 time_tracker.stop('validate_weights_allclose')
                 # print(time_tracker.last('validate_weights_allclose'))
