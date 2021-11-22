@@ -1,4 +1,10 @@
-# Master Thesis (Benedikt Völker)
+# Master Thesis von Benedikt Völker
+
+# Install Module
+
+You can install the clivaFL module with pip
+
+    pip install -e .
 
 ## Setup
 
