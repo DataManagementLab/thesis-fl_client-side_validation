@@ -14,7 +14,7 @@ dataset:
 model:
   type: ReLuMLP
   params:
-    layers: [784, 512, 512, 10]
+    layers: [784, 500, 500, 10]
 optimizer:
   type: SGD
   params:
@@ -26,10 +26,10 @@ loss_fn:
 training:
   # seed: 0
   use_gpu: False
-  n_epochs: 5 # 20
-  max_buffer_len: 50
+  n_epochs: 1 # 20
+  max_buffer_len: 16
   shuffle_batches: False
-  log_dir: times_test #_freivalds_async_mem
+  log_dir: times_test #_queue_nowait #async_manager #freivalds_async_cpu_disk
   training_method: no_attack
   training_params: {}
   # training_method: targeted_attack
@@ -48,5 +48,8 @@ validation:
   validation_method: freivald # submul # gvfa # freivald # matmul
   verbose: False
   silent: True
-  n_check: 9
+  # n_check: 9
+  guarantee: 0.99
+  validation_delay: 3
+  monitor_memory: True
   # val_prob: 0
