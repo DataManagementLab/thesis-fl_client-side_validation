@@ -1,0 +1,53 @@
+---
+dataset:
+  type: MNIST
+  params_train:
+    batch_size: 64
+    train: True
+    num_workers: 0
+    # n_malicious: 2
+    # shrink: 0.2
+  params_test:
+    batch_size: 1000
+    train: False
+    num_workers: 0
+model:
+  type: ReLuMLP
+  params:
+    layers: [784, 512, 512, 10]
+optimizer:
+  type: SGD
+  params:
+    lr: 0.01
+    momentum: 0.9
+loss_fn:
+  type: CrossEntropyLoss
+  params:
+training:
+  # seed: 0
+  use_gpu: False
+  n_epochs: 1 # 20
+  max_buffer_len: 50 #32
+  shuffle_batches: False
+  log_dir: exp_retrain_l2_512_sync_cpu_bt64_bf32_n1
+  training_method: no_attack
+  training_params: {}
+  # training_method: targeted_attack
+  # training_params:
+  #   boosting: True
+  #   boost_factor: 50
+  # training_method: untargeted_attack
+  # training_params:
+  #   frequency: 0.1
+  #   scale: 0.25
+validation:
+  run_validation: True
+  async_validators: 0
+  async_disk_queue: False
+  validation_type: retrain
+  # validation_method: freivald # submul # gvfa # freivald # matmul
+  verbose: False
+  silent: True
+  # guarantee: 0.99
+  # n_check: 1
+  # val_prob: 0
