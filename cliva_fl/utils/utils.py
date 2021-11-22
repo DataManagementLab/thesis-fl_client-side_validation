@@ -21,7 +21,7 @@ def rand_true(prob: float = None) -> bool:
 
 def tensors_close(tensor1: torch.Tensor, tensor2: torch.Tensor, rtol=1e-07, atol=1e-06) -> bool:
     # ∣input−other∣ <= atol + rtol x ∣other∣
-    return torch.lt(torch.abs(torch.sub(tensor1, tensor2)), atol + rtol * torch.abs(tensor2)).all().item()
+    return torch.le(torch.abs(torch.sub(tensor1, tensor2)), atol + rtol * torch.abs(tensor2)).all().item()
     # ∣input−other∣ <= atol
     # return torch.all(torch.lt(torch.abs(torch.sub(tensor1, tensor2)), atol)).item()
     # torch.allclose

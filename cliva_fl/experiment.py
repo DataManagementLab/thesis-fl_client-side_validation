@@ -20,6 +20,7 @@ from numpy import real
 # LIB IMPORTS
 import torch, numpy
 import torch.nn as nn
+import torch.multiprocessing as mp
 import yaml, math, random
 import pandas as pd
 import time, gc, sys
@@ -52,7 +53,7 @@ class Experiment:
         'total_time_validation'
     ]
 
-    def __init__(self, model_builder, optimizer_builder, loss_fn_builder, dataset, config_file, run_validation=True, validation_delay=0, monitor_memory=False, **validation_args):
+    def __init__(self, model_builder, optimizer_builder, loss_fn_builder, dataset, config_file, run_validation=True, monitor_memory=False, **validation_args):
         self.model_builder = model_builder
         self.optimizer_builder = optimizer_builder
         self.loss_fn_builder = loss_fn_builder
@@ -63,7 +64,6 @@ class Experiment:
         self.config_file = config_file
         self.set_training_fn()
         self.run_validation = run_validation
-        self.validation_delay = validation_delay
         self.monitor_memory = monitor_memory
         if run_validation:
             self.set_validation_fn(**validation_args)
@@ -108,7 +108,7 @@ class Experiment:
         
         return exp
     
-    def set_validation_fn(self, validation_type, validation_method='', async_validators=0, async_disk_queue=False, guarantee=None, **validation_kwargs):
+    def set_validation_fn(self, validation_type, validation_method='', async_validators=0, use_queue=False, async_disk_queue=False, guarantee=None, validation_delay=0, **validation_kwargs):
         SEPARATOR = '.'
 
         if validation_type == 'retrain':
@@ -133,6 +133,8 @@ class Experiment:
         
         self.async_validators = async_validators
         self.async_disk_queue = async_disk_queue
+        self.validation_delay = validation_delay
+        self.use_queue = use_queue or self.async_validation
 
         log.debug(f'Set validation function to {self.validation_id}')
     
@@ -183,15 +185,17 @@ class Experiment:
         train_stats = pd.DataFrame(columns=self.TRAIN_METRICS)
 
         # LAUNCH VALIDATORS, LOCK AND QUEUE
+        if self.use_queue:
+            self.queue = mp.Queue()
         if self.async_validation:
-            consumers, queue, lock = start_validators(
+            consumers, lock = start_validators(
                 self.async_validators,
+                self.queue,
                 logger=self.logger,
                 validation_fn=self.validation_fn,
                 loss_fn=self.val_loss_fn,
                 validation_delay=self.validation_delay,
                 monitor_memory=self.monitor_memory)
-            self.async_queue = queue
 
         # SHUFFLE BATCHES IF REQUIRED
         if shuffle_batches:
@@ -213,6 +217,7 @@ class Experiment:
             for batch, (data, target) in enumerate(lst):
 
                 self.time_tracker.start('total_time_training')
+                data = data.view(-1, 28 * 28)
 
                 # SAVE TO SET
                 vset = ValidationSet(epoch, batch)
@@ -224,12 +229,19 @@ class Experiment:
 
                 # GET GRADIENTS
                 self.time_tracker.start('raw_time_extract_gradients')
-                module_types = [nn.Linear, nn.Conv2d]
-                for name, module in self.model.named_modules():
-                    if type(module) in module_types:
-                        if not gradients[name]: gradients[name].append(None)
-                        gradients[name].append(module.weight.grad.detach().cpu())
-                        gradients[name].append(module.bias.grad.detach().cpu())
+                name = list(activations.keys())[0]
+                gradients[name].append(None)
+                gradients[name].append(self.model.layers[0].weight.grad.detach().cpu())
+                gradients[name].append(self.model.layers[0].bias.grad.detach().cpu())
+
+                # module_types = [nn.Linear, nn.Conv2d]
+                # for name, module in self.model.named_modules():
+                #     if type(module) in module_types:
+                #         if not gradients[name]: 
+                #             gradients[name].append(None)
+                #             gradients[name].append(module.weight.grad.detach().cpu())
+                #             gradients[name].append(module.bias.grad.detach().cpu())
+                #             break
                 self.time_tracker.stop('raw_time_extract_gradients')
 
                 # for key in activations.keys():
@@ -292,23 +304,30 @@ class Experiment:
         del self.logger
         if self.async_validation:
             # Join Validators
-            stop_validators(consumers, queue)
-            self.async_queue.close()
-            del self.async_queue
+            stop_validators(consumers, self.queue)
+        if self.use_queue:
+            self.queue.close()
+            del self.queue
 
     def validate(self, buffer):
 
-        if self.async_validation:
+        if self.use_queue:
             self.time_tracker.start('mp_put_queue')
             if self.async_disk_queue:
                 msg = self.logger.put_queue(buffer)
             else:
                 msg = buffer
-            self.async_queue.put_nowait(msg)
+            self.queue.put_nowait(msg)
             self.time_tracker.stop('mp_put_queue')
-        else:
+        if not self.async_validation:
+            self.time_tracker.start('svr_get_buffer')
+            if self.use_queue:
+                bffr = self.queue.get()
+            else:
+                bffr = buffer
+            self.time_tracker.stop('svr_get_buffer')
             validation.validate_buffer(
-                buffer, 
+                bffr, 
                 self.validation_fn,
                 self.val_model,
                 self.val_optimizer,

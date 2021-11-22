@@ -17,8 +17,8 @@ class ValidationSet():
         self.batch = batch
     
     def set_data(self, data, target):
-        self.data = data.detach().cpu()
-        self.target = target.detach().cpu()
+        self.data = data.detach().cpu().clone()
+        self.target = target.detach().cpu().clone()
     
     def set_model_state(self, model):
         self.model_state_dict = { k: v.detach().clone().cpu() for k, v in model.state_dict().items() }

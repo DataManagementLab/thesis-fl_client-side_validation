@@ -68,57 +68,125 @@ show profiler plot
 | device       | CPU, GPU |
 | batch size   | 32, 64, 128, (256) |
 | buffer size  | 32, 64, 128, (256) |
-| guarantee    | 50%, 80%, 99% |
+| guarantee    | 50%, 75%, 90%, 99% |
 | n_check      | 1-15 (depends on guarantee & # layers) |
 | attack noise | 1e-5, 1e-4, 1e-3, 1e-2, 1e-1 |
 
 
 ## Time
 
-### Experiment 1
+### Scalability of Validation Methods
+
+Measure Validation time for validation methods for different model size
 
 | Parameter    | Values |
 |--------------|--------|
+| val method   | freivald, gvfa, submul, matmul |
+| model size   | 2, 4, 6, 8 |
+| layer size   | 512 |
+| concurrency  | sync |
+| device       | CPU |
+| batch size   | 64 |
+| buffer size  | 32 |
+| n_check      | 1 |
+
+### Scalability of Validation Methods (Fixed Guarantee - Freivalds & GVFA)
+
+Measure Validation time for validation methods for different model size with fixed guarantee
+
+| Parameter    | Values |
+|--------------|--------|
+| val method   | freivald, gvfa |
+| model size   | 2, 4, 6, 8 |
+| layer size   | 512 |
+| concurrency  | sync |
+| device       | CPU |
+| batch size   | 64 |
+| buffer size  | 32 |
+| guarantee    | 99% |
+
+### Validation Time per Guarantee (Fixed #Layers - Freivalds & SubMul)
+
+Measure Validation time for validation methods for different guarantees
+
+| Parameter    | Values |
+|--------------|--------|
+| val method   | freivald, submul |
 | model size   | 2 |
 | layer size   | 512 |
 | concurrency  | sync |
 | device       | CPU |
 | batch size   | 64 |
 | buffer size  | 32 |
-| n_check      | 1 |
+| guarantee    | 50%, 75%, 90%, 99% |
 
-### Experiment 1
+### Training & Validation Time for Sync/Async and CPU/GPU (Freivalds)
+
+Measure Validation time for validation methods for different guarantees
 
 | Parameter    | Values |
 |--------------|--------|
-| model size   | 4 |
+| val method   | freivald |
+| model size   | 2 |
+| layer size   | 512 |
+| concurrency  | sync, async |
+| device       | CPU, GPU |
+| batch size   | 64 |
+| buffer size  | 32 |
+| guarantee    | 99% |
+
+## Memory
+
+process size = model size * batch size * layer size * buffer size
+
+### Memory Consumption per Buffer Size
+
+Measure memory consumption for differen buffer sizes (with freivalds)
+
+| Parameter    | Values |
+|--------------|--------|
+| val method   | freivald |
+| model size   | 2 |
+| layer size   | 512 |
+| concurrency  | sync |
+| device       | CPU |
+| batch size   | 64 |
+| buffer size  | 8, 16, 32, 64 |
+| n_check      | 1 |
+
+## Detection Quality
+
+### Detection of varying Noise
+
+Measure Detection Quality for different noise level (fixed guarantee)
+
+| Parameter    | Values |
+|--------------|--------|
+| val method   | freivald |
+| model size   | 2 |
 | layer size   | 512 |
 | concurrency  | sync |
 | device       | CPU |
 | batch size   | 64 |
 | buffer size  | 32 |
-| n_check      | 1 |
+| attack noise | 1e-5, 1e-3, 1e-1 |
+| guarantee    | 99% |
 
-### Experiment 1
+### Detection Quality per Guarantee
+
+Measure Detection Quality for different guarantee levels (fixed noise)
 
 | Parameter    | Values |
 |--------------|--------|
-| model size   | 6 |
+| val method   | freivald |
+| model size   | 2 |
 | layer size   | 512 |
 | concurrency  | sync |
 | device       | CPU |
 | batch size   | 64 |
 | buffer size  | 32 |
-| n_check      | 1 |
+| attack noise | 1e-3 |
+| guarantee    | 50%, 75%, 90%, 99% |
 
-### Experiment 1
 
-| Parameter    | Values |
-|--------------|--------|
-| model size   | 8 |
-| layer size   | 512 |
-| concurrency  | sync |
-| device       | CPU |
-| batch size   | 64 |
-| buffer size  | 32 |
-| n_check      | 1 |
+

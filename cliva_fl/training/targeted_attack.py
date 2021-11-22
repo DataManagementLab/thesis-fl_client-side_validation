@@ -8,7 +8,7 @@ def targeted_attack(model, optimizer, loss_fn, data, target, epoch, batch, devic
     if malicious and boosting:
         orig_lr = optimizer.param_groups[0]['lr']
         optimizer.param_groups[0]['lr'] *= boost_factor
-    output = model(data.to(device).view(-1, 28 * 28))
+    output = model(data.to(device))
     loss = loss_fn(output, target.to(device))
     loss.backward()
     optimizer.step()
