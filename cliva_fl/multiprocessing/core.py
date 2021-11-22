@@ -7,8 +7,7 @@ except RuntimeError: pass
 from .validation_process import validation_process, consumer_process
 from .process_logger import get_process_logger
 
-def start_validators(num, logger: Logger, **kwargs):
-    queue = Queue()
+def start_validators(num, queue: Queue, logger: Logger, **kwargs):
     lock = Lock()
     consumers = []
     logger.set_lock(lock)
@@ -17,7 +16,7 @@ def start_validators(num, logger: Logger, **kwargs):
         consumers.append(Process(target=validation_process, args=(queue, logger), kwargs=kwargs))
     
     for c in consumers: c.start()
-    return consumers, queue, lock
+    return consumers, lock
 
 def stop_validators(consumers, queue):
     for c in consumers: queue.put_nowait(None)
