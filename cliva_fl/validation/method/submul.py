@@ -1,7 +1,7 @@
 import torch, numpy, sys, time
 from cliva_fl.utils import tensors_close
 
-def submul(A, B, C, bias=None, rtol=1e-05, atol=1e-08, frac=.5, shuffle=False):
+def submul(A, B, C, bias=None, rtol=1e-05, atol=1e-08, frac=.5, shuffle=True):
     """
     Normal forward pass
     """

@@ -70,8 +70,7 @@ class ValidationSet():
         complete = True
         complete &= self.data is not None
         complete &= self.target is not None
-        complete &= self.model_start_state_dict is not None
-        complete &= self.model_end_state_dict is not None
+        complete &= self.model_state_dict is not None
         complete &= self.optimizer_state_dict is not None
         complete &= self.activations is not None
         complete &= self.gradients is not None

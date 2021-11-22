@@ -39,7 +39,7 @@ log.basicConfig(
 
 # MODULE IMPORTS
 from cliva_fl import training, validation, datasets, models
-from cliva_fl.utils import ValidationSet, Logger, TimeTracker, logger, register_activation_hooks, register_gradient_hooks, partial_class, load_config, time_tracker
+from cliva_fl.utils import ValidationSet, Logger, TimeTracker, logger, register_activation_hooks, register_gradient_hooks, partial_class, load_config, time_tracker, freivalds_rounds
 from cliva_fl.multiprocessing import start_validators, stop_validators
 
 class Experiment:
@@ -52,22 +52,24 @@ class Experiment:
         'total_time_validation'
     ]
 
-    def __init__(self, model_builder, optimizer_builder, loss_fn_builder, dataset, config_file, run_validation=True, **validation_args):
+    def __init__(self, model_builder, optimizer_builder, loss_fn_builder, dataset, config_file, run_validation=True, validation_delay=0, monitor_memory=False, **validation_args):
         self.model_builder = model_builder
         self.optimizer_builder = optimizer_builder
         self.loss_fn_builder = loss_fn_builder
         self.time_tracker = TimeTracker()
+        self.reset()
 
         self.dataset = dataset
         self.config_file = config_file
         self.set_training_fn()
         self.run_validation = run_validation
+        self.validation_delay = validation_delay
+        self.monitor_memory = monitor_memory
         if run_validation:
             self.set_validation_fn(**validation_args)
         else:
             self.async_validators = 0
 
-        self.reset()
         log.debug('Experiment initialized.')
     
     @classmethod
@@ -106,19 +108,25 @@ class Experiment:
         
         return exp
     
-    def set_validation_fn(self, validation_type, validation_method='', async_validators=0, async_disk_queue=False, **validation_kwargs):
+    def set_validation_fn(self, validation_type, validation_method='', async_validators=0, async_disk_queue=False, guarantee=None, **validation_kwargs):
         SEPARATOR = '.'
 
         if validation_type == 'retrain':
             self.validation_id = validation_type
-            self.validation_fn = validation.validate_retrain
+            self.validation_fn = partial(validation.validate_retrain, **validation_kwargs)
         elif validation_type == 'extract':
             assert hasattr(validation.method, validation_method)
             log.info(f'Using validation method {validation_method}')
             validation_method_fn = getattr(validation.method, validation_method)
+            
+            extra_kwargs = dict()
+            if guarantee:
+                if validation_method == 'freivald':
+                    extra_kwargs['n_check'] = freivalds_rounds(len(self.model.layers)/2, guarantee)
+            log.info(f"extra_kwargs: {extra_kwargs}")
 
             self.validation_id = SEPARATOR.join((validation_type, validation_method))
-            self.validation_fn = partial(validation.validate_extract, validation_method_fn, **validation_kwargs)
+            self.validation_fn = partial(validation.validate_extract, validation_method_fn, **extra_kwargs, **validation_kwargs)
         else:
             log.error(f'Validation type {validation_type} is not supported.')
             return
@@ -180,7 +188,9 @@ class Experiment:
                 self.async_validators,
                 logger=self.logger,
                 validation_fn=self.validation_fn,
-                loss_fn=self.val_loss_fn)
+                loss_fn=self.val_loss_fn,
+                validation_delay=self.validation_delay,
+                monitor_memory=self.monitor_memory)
             self.async_queue = queue
 
         # SHUFFLE BATCHES IF REQUIRED
@@ -198,6 +208,7 @@ class Experiment:
             if shuffle_batches: random.shuffle(lst)
             buffer = ValidationBuffer(epoch, max_buffer_len)
             buffer.set_init_model_state(self.model)
+            self.time_tracker.start('mp_fill_buffer')
             
             for batch, (data, target) in enumerate(lst):
 
@@ -212,12 +223,14 @@ class Experiment:
                 self.time_tracker.stop('raw_time_training')
 
                 # GET GRADIENTS
+                self.time_tracker.start('raw_time_extract_gradients')
                 module_types = [nn.Linear, nn.Conv2d]
                 for name, module in self.model.named_modules():
                     if type(module) in module_types:
                         if not gradients[name]: gradients[name].append(None)
                         gradients[name].append(module.weight.grad.detach().cpu())
                         gradients[name].append(module.bias.grad.detach().cpu())
+                self.time_tracker.stop('raw_time_extract_gradients')
 
                 # for key in activations.keys():
                 #     l =  getattr(self.model, key)
@@ -240,12 +253,18 @@ class Experiment:
                 self.time_tracker.stop('total_time_training')
 
                 if buffer.full() or len(lst) == batch+1:
+                    self.time_tracker.stop('mp_fill_buffer')
                     gc.collect() # Free unused memory
                     if self.run_validation:
+                        self.time_tracker.start('mp_call_validation')
                         self.validate(buffer)
+                        self.time_tracker.stop('mp_call_validation')
                     buffer = ValidationBuffer(epoch, max_buffer_len)
                     buffer.set_init_model_state(self.model)
                     gc.collect() # Free unused memory
+                    self.time_tracker.start('mp_fill_buffer')
+            
+            self.time_tracker.stop('mp_fill_buffer')
             
             self.logger.save_model(epoch, self.model)
             train_loss = train_loss/len(self.dataset.dataset)
@@ -274,16 +293,19 @@ class Experiment:
         if self.async_validation:
             # Join Validators
             stop_validators(consumers, queue)
+            self.async_queue.close()
             del self.async_queue
 
     def validate(self, buffer):
 
         if self.async_validation:
+            self.time_tracker.start('mp_put_queue')
             if self.async_disk_queue:
                 msg = self.logger.put_queue(buffer)
             else:
                 msg = buffer
-            self.async_queue.put(msg)
+            self.async_queue.put_nowait(msg)
+            self.time_tracker.stop('mp_put_queue')
         else:
             validation.validate_buffer(
                 buffer, 

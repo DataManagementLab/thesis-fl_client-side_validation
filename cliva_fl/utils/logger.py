@@ -42,6 +42,7 @@ class Logger:
     MODEL_FILE = 'model.pth'
     ATTACKS_APPLIED_LOG = 'attacks_applied.csv'
     ATTACKS_DETECTED_LOG = 'attacks_detected.csv'
+    MEMORY_USAGE_LOG = 'memory_usage.csv'
     EXP_NAME_FORMAT = 'experiment_%Y_%m_%d__%H:%M'
 
     def __init__(self, base_path: str = None, exp_name: str = None, timestamp: datetime = None) -> None:
@@ -158,6 +159,25 @@ class Logger:
         self.acquire_lock()
         try:
             self._log_csv(path, [epoch, batch, element, attack_type])
+        finally:
+            self.release_lock()
+    
+    def init_memory_usage_log(self):
+        data = ['process_id', 'base', 'peak', 'diff']
+        path = self.get_path(tail=self.MEMORY_USAGE_LOG)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        self.acquire_lock()
+        try:
+            self._log_csv(path, data)
+        finally:
+            self.release_lock()
+
+    def log_memory_usage(self, process_id, base, peak, diff):
+        path = self.get_path(tail=self.MEMORY_USAGE_LOG)
+        if not path.is_file(): self.init_memory_usage_log()
+        self.acquire_lock()
+        try:
+            self._log_csv(path, [process_id, base, peak, diff])
         finally:
             self.release_lock()
 
