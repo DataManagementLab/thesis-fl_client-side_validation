@@ -1,9 +1,14 @@
+from torch import nn
+from copy import deepcopy
 from cliva_fl.utils import vc, register_activation_hooks, register_gradient_hooks, TimeTracker, Logger, tensors_close
 
 def validate_retrain(validation_set, model, optimizer, loss_fn, next_model, time_tracker: TimeTracker, logger: Logger, verbose=False, silent=False, index=None):
 
     time_tracker.start('validate_other')
     data, target, activations, gradients, loss = validation_set.get_dict().values()
+
+    model = deepcopy(model)
+    next_model = deepcopy(next_model)
 
     optimizer.zero_grad()
 
@@ -17,6 +22,7 @@ def validate_retrain(validation_set, model, optimizer, loss_fn, next_model, time
     time_tracker.stop('validate_other')
     
     # TRAIN THE MODEL
+    data = data.view(-1, 28 * 28)
     time_tracker.start('validate_retrain')
     optimizer.zero_grad()
     output = model(data)
@@ -55,13 +61,26 @@ def validate_retrain(validation_set, model, optimizer, loss_fn, next_model, time
     time_tracker.start('validate_gradients')
     if verbose: print('  GRADIENTS:')
     grad_total = True
-    gradients_check = {key: getattr(model, key).weight.grad for key in activations.keys()}
-    for key, grad_check in gradients_check.items():
-        # grad_diff = torch.mean(torch.abs(grad_check - gradients[key][1]))*100
-        # grad_valid = grad_diff == 0.0
-        grad_valid = tensors_close(grad_check, gradients[key][1])
-        grad_total &= grad_valid
-        if verbose: print('    {} {}'.format(vc(grad_valid), key))
+    # gradients_check = {key: getattr(model, key).weight.grad for key in activations.keys()}
+    # for key, grad_check in gradients_check.items():
+    for i in reversed(range(len(model.layers))):
+        name = f'layers.{i}'
+        module = model.layers[i]
+
+        if type(module) in [nn.Linear, nn.Conv2d]:
+
+            # grad_diff = torch.mean(torch.abs(grad_check - gradients[key][1]))*100
+            # grad_valid = grad_diff == 0.0
+            if name in gradients_check:
+                grad_x_valid = tensors_close(gradients_check[name][0], gradients[name][0])
+            else:
+                grad_x_valid = True
+            grad_W_valid = tensors_close(module.weight.grad, gradients[name][1])
+            # grad_b_valid = torch.allclose(torch.sum(C_a, dim=0), grad_b, atol=1e-06)
+            grad_b_valid = tensors_close(module.bias.grad, gradients[name][2])
+            grad_valid = grad_x_valid and grad_W_valid and grad_b_valid
+            grad_total &= grad_valid
+            if verbose: print(f'    {vc(grad_valid)} {name} (n: {A.shape[0]})')
     time_tracker.stop('validate_gradients')
     
     # VALIDATE WEIGHTS
@@ -80,4 +99,7 @@ def validate_retrain(validation_set, model, optimizer, loss_fn, next_model, time
         if index is not None: print(f'batch {index:04d}', end=' ')
         print(f'act: {vc(act_total)}; loss: {vc(loss_valid)}; grad: {vc(grad_total)}; weights: {vc(weight_total)}')
     
+    activations_check.clear()
+    gradients_check.clear()
+
     if verbose: print()

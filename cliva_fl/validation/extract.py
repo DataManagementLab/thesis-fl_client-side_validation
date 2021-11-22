@@ -2,7 +2,7 @@ import torch, sys, time
 from torch import nn
 import torch.nn.functional as F
 
-from cliva_fl.utils import TimeTracker, Logger, ValidationSet, vc, tensors_close, rand_true
+from cliva_fl.utils import TimeTracker, Logger, ValidationSet, vc, tensors_close, tensors_close_sum, rand_true
 
 def validate_extract(validation_method, validation_set: ValidationSet, model, optimizer, loss_fn, next_model, time_tracker: TimeTracker, logger: Logger, val_prob=None, verbose=False, silent=False, index=None, **method_args):
 
@@ -179,9 +179,10 @@ def validate_extract(validation_method, validation_set: ValidationSet, model, op
                 time_tracker.start('validate_weights_allclose')
                 # W_valid = torch.allclose(new_layer.weight, next_layer.weight)
                 # b_valid = torch.allclose(new_layer.bias, next_layer.bias)
-                W_valid = tensors_close(module.weight, next_module.weight)
+                W_valid = tensors_close_sum(module.weight, next_module.weight)
                 b_valid = tensors_close(module.bias, next_module.bias)
                 time_tracker.stop('validate_weights_allclose')
+                # print(time_tracker.last('validate_weights_allclose'))
 
                 if not W_valid: 
                     logger.log_attack_detection(

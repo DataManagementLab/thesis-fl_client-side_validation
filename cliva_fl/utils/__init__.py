@@ -1,4 +1,4 @@
-from .utils import vc, load_config, tensors_close, rand_true
+from .utils import vc, load_config, tensors_close, tensors_close_sum, rand_true, freivalds_rounds
 from .partial_class import partial_class
 from .validation_set import ValidationSet
 from .validation_buffer import ValidationBuffer

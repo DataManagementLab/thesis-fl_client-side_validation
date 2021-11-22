@@ -1,5 +1,5 @@
 from cliva_fl.utils import Logger
-from torch.multiprocessing import Process, Queue, Lock, set_start_method, get_sharing_strategy, set_sharing_strategy
+from torch.multiprocessing import Process, Queue, Lock, set_start_method, get_sharing_strategy, set_sharing_strategy, Pipe
 try: set_start_method('spawn')
 except RuntimeError: pass
 try: set_sharing_strategy('file_system')
@@ -20,5 +20,6 @@ def start_validators(num, logger: Logger, **kwargs):
     return consumers, queue, lock
 
 def stop_validators(consumers, queue):
-    for c in consumers: queue.put(None)
+    for c in consumers: queue.put_nowait(None)
     for c in consumers: c.join()
+    
