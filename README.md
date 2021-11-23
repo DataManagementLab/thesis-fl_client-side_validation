@@ -162,7 +162,7 @@ Measure Detection Quality for different noise level (fixed guarantee)
 
 | Parameter    | Values |
 |--------------|--------|
-| val method   | freivald |
+| val method   | freivald, gvfa |
 | model size   | 2 |
 | layer size   | 512 |
 | concurrency  | sync |
