@@ -1,0 +1,64 @@
+---
+log_dir: thesis_plots
+plot_dir: evaluation_test
+name: line_memory_test
+title: comparison of validation memory
+xlabel: buffer size
+ylabel: memory in MiB
+ymin: 0
+# ymax: 1
+# grid: True
+xscale: log
+xbase: 2
+metric: diff
+# xvalues: [0.1, 0.01, 0.001, 0.0001, 0.00001]
+xvalues: [8, 16, 32, 64]
+# xvalues: [1, 2, 3, 4, 5]
+data:
+- label: freivalds
+  # conf:
+  #   color: red
+  log_dirs: [
+    exp_mem_freivald_l2_512_async_cpu_bt64_bf8_n1,
+    exp_mem_freivald_l2_512_async_cpu_bt64_bf16_n1,
+    exp_mem_freivald_l2_512_async_cpu_bt64_bf32_n1,
+    exp_mem_freivald_l2_512_async_cpu_bt64_bf64_n1
+  ]
+# - label: gvfa
+#   # conf:
+#   #   color: orange
+#   log_dirs: [
+#     exp_attack_gvfa_l2_512_sync_cpu_bt64_bf32_n1_noise1e-5,
+#     exp_attack_gvfa_l2_512_sync_cpu_bt64_bf32_n1_noise1e-4,
+#     exp_attack_gvfa_l2_512_sync_cpu_bt64_bf32_n1_noise1e-3,
+#     exp_attack_gvfa_l2_512_sync_cpu_bt64_bf32_n1_noise1e-2,
+#     exp_attack_gvfa_l2_512_sync_cpu_bt64_bf32_n1_noise1e-1
+#   ]
+- label: submul
+  # conf:
+  #   color: blue
+  log_dirs: [
+    exp_mem_submul_l2_512_async_cpu_bt64_bf8_n1,
+    exp_mem_submul_l2_512_async_cpu_bt64_bf16_n1,
+    exp_mem_submul_l2_512_async_cpu_bt64_bf32_n1,
+    exp_mem_submul_l2_512_async_cpu_bt64_bf64_n1
+  ]
+- label: matmul
+  # conf:
+  #   color: green
+  log_dirs: [
+    exp_mem_matmul_l2_512_async_cpu_bt64_bf8_n1,
+    exp_mem_matmul_l2_512_async_cpu_bt64_bf16_n1,
+    exp_mem_matmul_l2_512_async_cpu_bt64_bf32_n1,
+    exp_mem_matmul_l2_512_async_cpu_bt64_bf64_n1
+  ]
+# - label: retrain
+#   # conf:
+#   #   color: purple
+#   log_dirs: [
+#     exp_time_retrain_l2_512_sync_cpu_bt64_bf32_n1,
+#     exp_time_retrain_l4_512_sync_cpu_bt64_bf32_n1,
+#     exp_time_retrain_l6_512_sync_cpu_bt64_bf32_n1,
+#     exp_time_retrain_l8_512_sync_cpu_bt64_bf32_n1
+#   ]
+...

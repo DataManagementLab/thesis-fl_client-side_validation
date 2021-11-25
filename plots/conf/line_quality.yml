@@ -1,0 +1,65 @@
+---
+log_dir: thesis_plots
+plot_dir: evaluation_test
+name: line_quality_test
+title: comparison of validation quality
+xlabel: noise level
+ylabel: f1-score
+ymin: 0
+# ymax: 1
+# grid: True
+xscale: log
+metric: accuracy
+# xvalues: [0.1, 0.01, 0.001, 0.0001, 0.00001]
+xvalues: [0.00001, 0.0001, 0.001, 0.01, 0.1]
+# xvalues: [1, 2, 3, 4, 5]
+data:
+- label: freivalds
+  # conf:
+  #   color: red
+  log_dirs: [
+    exp_attack_freivald_l2_512_sync_cpu_bt64_bf32_q99_noise1e-5,
+    exp_attack_freivald_l2_512_sync_cpu_bt64_bf32_q99_noise1e-4,
+    exp_attack_freivald_l2_512_sync_cpu_bt64_bf32_q99_noise1e-3,
+    exp_attack_freivald_l2_512_sync_cpu_bt64_bf32_q99_noise1e-2,
+    exp_attack_freivald_l2_512_sync_cpu_bt64_bf32_q99_noise1e-1
+  ]
+- label: gvfa
+  # conf:
+  #   color: orange
+  log_dirs: [
+    exp_attack_gvfa_l2_512_sync_cpu_bt64_bf32_n1_noise1e-5,
+    exp_attack_gvfa_l2_512_sync_cpu_bt64_bf32_n1_noise1e-4,
+    exp_attack_gvfa_l2_512_sync_cpu_bt64_bf32_n1_noise1e-3,
+    exp_attack_gvfa_l2_512_sync_cpu_bt64_bf32_n1_noise1e-2,
+    exp_attack_gvfa_l2_512_sync_cpu_bt64_bf32_n1_noise1e-1
+  ]
+- label: submul
+  # conf:
+  #   color: blue
+  log_dirs: [
+    exp_attack_submul_l2_512_sync_cpu_bt64_bf32_s50_noise1e-5,
+    exp_attack_submul_l2_512_sync_cpu_bt64_bf32_s50_noise1e-4,
+    exp_attack_submul_l2_512_sync_cpu_bt64_bf32_s50_noise1e-3,
+    exp_attack_submul_l2_512_sync_cpu_bt64_bf32_s50_noise1e-2,
+    exp_attack_submul_l2_512_sync_cpu_bt64_bf32_s50_noise1e-1
+  ]
+# - label: matmul
+#   # conf:
+#   #   color: green
+#   log_dirs: [
+#     exp_time_matmul_l2_512_sync_cpu_bt64_bf32_n1,
+#     exp_time_matmul_l4_512_sync_cpu_bt64_bf32_n1,
+#     exp_time_matmul_l6_512_sync_cpu_bt64_bf32_n1,
+#     exp_time_matmul_l8_512_sync_cpu_bt64_bf32_n1
+#   ]
+# - label: retrain
+#   # conf:
+#   #   color: purple
+#   log_dirs: [
+#     exp_time_retrain_l2_512_sync_cpu_bt64_bf32_n1,
+#     exp_time_retrain_l4_512_sync_cpu_bt64_bf32_n1,
+#     exp_time_retrain_l6_512_sync_cpu_bt64_bf32_n1,
+#     exp_time_retrain_l8_512_sync_cpu_bt64_bf32_n1
+#   ]
+...

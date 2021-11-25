@@ -1,0 +1,59 @@
+---
+log_dir: thesis_plots
+plot_dir: evaluation_test
+name: line_times_test
+title: comparison of validation methods
+xlabel: number of layers
+ylabel: validation time / epoch (sec)
+# ymin: 0
+# ymax: 1
+# grid: True
+metric: total_time_validation
+xvalues: [2, 4, 6, 8]
+data:
+- label: freivalds
+  # conf:
+  #   color: red
+  log_dirs: [
+    exp_time_freivald_l2_512_sync_cpu_bt64_bf32_n1,
+    exp_time_freivald_l4_512_sync_cpu_bt64_bf32_n1,
+    exp_time_freivald_l6_512_sync_cpu_bt64_bf32_n1,
+    exp_time_freivald_l8_512_sync_cpu_bt64_bf32_n1
+  ]
+# - label: gvfa
+  # conf:
+  #   - color: orange
+#   log_dirs: [
+#     exp_time_gvfa_l2_512_sync_cpu_bt64_bf32_n1,
+#     exp_time_gvfa_l4_512_sync_cpu_bt64_bf32_n1,
+#     exp_time_gvfa_l6_512_sync_cpu_bt64_bf32_n1,
+#     exp_time_gvfa_l8_512_sync_cpu_bt64_bf32_n1
+#   ]
+- label: submul
+  # conf:
+  #   color: blue
+  log_dirs: [
+    exp_time_submul_l2_512_sync_cpu_bt64_bf32_n1,
+    exp_time_submul_l4_512_sync_cpu_bt64_bf32_n1,
+    exp_time_submul_l6_512_sync_cpu_bt64_bf32_n1,
+    exp_time_submul_l8_512_sync_cpu_bt64_bf32_n1
+  ]
+- label: matmul
+  # conf:
+  #   color: green
+  log_dirs: [
+    exp_time_matmul_l2_512_sync_cpu_bt64_bf32_n1,
+    exp_time_matmul_l4_512_sync_cpu_bt64_bf32_n1,
+    exp_time_matmul_l6_512_sync_cpu_bt64_bf32_n1,
+    exp_time_matmul_l8_512_sync_cpu_bt64_bf32_n1
+  ]
+- label: retrain
+  # conf:
+  #   color: purple
+  log_dirs: [
+    exp_time_retrain_l2_512_sync_cpu_bt64_bf32_n1,
+    exp_time_retrain_l4_512_sync_cpu_bt64_bf32_n1,
+    exp_time_retrain_l6_512_sync_cpu_bt64_bf32_n1,
+    exp_time_retrain_l8_512_sync_cpu_bt64_bf32_n1
+  ]
+...
