@@ -24,12 +24,12 @@ loss_fn:
   type: CrossEntropyLoss
   params:
 training:
-  seed: 0
-  use_gpu: True
-  n_epochs: 20 # 20
+  # seed: 0
+  use_gpu: False
+  n_epochs: 5 # 20
   max_buffer_len: 32
   shuffle_batches: False
-  log_dir: times_test #_queue_nowait #async_manager #freivalds_async_cpu_disk
+  log_dir: exp_attack_gvfa_l2_512_sync_cpu_bt64_bf32_n1_noise1e-5
   # training_method: no_attack
   # training_params: {}
   # training_method: targeted_attack
@@ -39,7 +39,7 @@ training:
   training_method: untargeted_attack
   training_params:
     frequency: 0.1
-    scale: 0.0002
+    scale: 0.00001
     corrupt_neurons: 5
     random_noise: False
 validation:

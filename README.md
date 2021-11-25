@@ -169,7 +169,8 @@ Measure Detection Quality for different noise level (fixed guarantee)
 | device       | CPU |
 | batch size   | 64 |
 | buffer size  | 32 |
-| attack noise | 1e-5, 1e-3, 1e-1 |
+| attack noise | 1e-5, 1e-4, 1e-3, 1e-2, 1e-1 |
+| num_neurons  | 5 |
 | guarantee    | 99% |
 
 ### Detection Quality per Guarantee

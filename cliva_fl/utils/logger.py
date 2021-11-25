@@ -213,12 +213,13 @@ class Logger:
         return obj
     
     def check_attack_detection(self):
-        join_index = ['epoch', 'batch', 'element']
+        join_index = ['epoch', 'batch', 'element', 'type']
         for epoch in range(1, self.num_epochs):
             applications = self._load_csv(self.ATTACKS_APPLIED_LOG, epoch).set_index(join_index)
             detections = self._load_csv(self.ATTACKS_DETECTED_LOG, epoch).set_index(join_index)
             TP = applications.join(
                 detections,
+                how='inner',
                 lsuffix='_app',
                 rsuffix='_det')
             FN = applications.drop(TP.index)

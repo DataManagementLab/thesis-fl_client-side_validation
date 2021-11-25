@@ -2,10 +2,16 @@
 
 N=5
 
+# TIME Experiments
 EXPERIMENT_METHOD_SCALABILITY=false
 EXPERIMENT_GUARANTEE_SCALABILITY=false
 
-EXPERIMENT_BUFFER_SIZE=true
+# SPACE Experiments
+EXPERIMENT_BUFFER_SIZE=false
+
+# QUALITY Experiments
+EXPERIMENT_VARYING_NOISE=true
+
 
 if $EXPERIMENT_METHOD_SCALABILITY; then
 echo "===== TIME EXPERIMENT_METHOD_SCALABILITY ====="
@@ -62,4 +68,28 @@ python run_exp.py -r $N -c experiments/memory/submul/l2_512_async_cpu_bt64_bf8_n
 python run_exp.py -r $N -c experiments/memory/submul/l2_512_async_cpu_bt64_bf16_n1.yml
 python run_exp.py -r $N -c experiments/memory/submul/l2_512_async_cpu_bt64_bf32_n1.yml
 python run_exp.py -r $N -c experiments/memory/submul/l2_512_async_cpu_bt64_bf64_n1.yml
+fi
+
+if $EXPERIMENT_VARYING_NOISE; then
+echo "===== QUALITY EXPERIMENT_VARYING_NOISE ====="
+echo "===== QUALITY EXPERIMENT_VARYING_NOISE | Freivald ====="
+python run_exp.py -r $N -c experiments/attack/freivald/l2_512_sync_cpu_bt64_bf32_q99_noise1e-2.yml
+python run_exp.py -r $N -c experiments/attack/freivald/l2_512_sync_cpu_bt64_bf32_q99_noise1e-1.yml
+python run_exp.py -r $N -c experiments/attack/freivald/l2_512_sync_cpu_bt64_bf32_q99_noise1e-3.yml
+python run_exp.py -r $N -c experiments/attack/freivald/l2_512_sync_cpu_bt64_bf32_q99_noise1e-4.yml
+python run_exp.py -r $N -c experiments/attack/freivald/l2_512_sync_cpu_bt64_bf32_q99_noise1e-5.yml
+
+echo "===== QUALITY EXPERIMENT_VARYING_NOISE | GVFA ====="
+python run_exp.py -r $N -c experiments/attack/gvfa/l2_512_sync_cpu_bt64_bf32_n1_noise1e-1.yml
+python run_exp.py -r $N -c experiments/attack/gvfa/l2_512_sync_cpu_bt64_bf32_n1_noise1e-2.yml
+python run_exp.py -r $N -c experiments/attack/gvfa/l2_512_sync_cpu_bt64_bf32_n1_noise1e-3.yml
+python run_exp.py -r $N -c experiments/attack/gvfa/l2_512_sync_cpu_bt64_bf32_n1_noise1e-4.yml
+python run_exp.py -r $N -c experiments/attack/gvfa/l2_512_sync_cpu_bt64_bf32_n1_noise1e-5.yml
+
+echo "===== QUALITY EXPERIMENT_VARYING_NOISE | SubMul ====="
+python run_exp.py -r $N -c experiments/attack/submul/l2_512_sync_cpu_bt64_bf32_s50_noise1e-1.yml
+python run_exp.py -r $N -c experiments/attack/submul/l2_512_sync_cpu_bt64_bf32_s50_noise1e-2.yml
+python run_exp.py -r $N -c experiments/attack/submul/l2_512_sync_cpu_bt64_bf32_s50_noise1e-3.yml
+python run_exp.py -r $N -c experiments/attack/submul/l2_512_sync_cpu_bt64_bf32_s50_noise1e-4.yml
+python run_exp.py -r $N -c experiments/attack/submul/l2_512_sync_cpu_bt64_bf32_s50_noise1e-5.yml
 fi
