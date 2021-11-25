@@ -11,7 +11,7 @@ def submul(A, B, C, bias=None, rtol=1e-05, atol=1e-08, ratio=.5, shuffle=True):
         permut = torch.randperm(A.shape[0])[0:int(A.shape[0]*ratio)]
         Ap = A[permut]
         Cp = C[permut]
-        tclose = torch.allclose(torch.matmul(Ap, B) + bias, Cp)
+        tclose = tensors_close(torch.matmul(Ap, B) + bias, Cp, rtol=rtol, atol=atol)
     else:
         frac_A = int(A.shape[0] * ratio)
         strt_A = torch.randint(0, A.shape[0] - frac_A,(1,)).item()

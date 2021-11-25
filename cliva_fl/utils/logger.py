@@ -181,6 +181,13 @@ class Logger:
         finally:
             self.release_lock()
 
+    def load_memory_usage(self):
+        self.acquire_lock()
+        try:
+            return self._load_csv(Path(self.MEMORY_USAGE_LOG))
+        finally:
+            self.release_lock()
+
     def log_times(self, epoch, times_history: Dict):
         path = self.get_path(epoch, tail='times')
         path.mkdir(parents=True, exist_ok=True)
@@ -212,23 +219,38 @@ class Logger:
         self._rm_file(path)
         return obj
     
-    def check_attack_detection(self):
-        join_index = ['epoch', 'batch', 'element', 'type']
+    def print_attack_detection(self):
+        total_TP = total_FP = total_FN = 0
         for epoch in range(1, self.num_epochs):
+            TP, FP, FN = self.check_attack_detection(epoch)
+            total_TP += TP
+            total_FP += FP
+            total_FN += FN
+            print(f'epoch {epoch:03}\tDetected: {TP}/{TP+FN}\t\tTP {TP}\t\tFP {FP}\t\tFN {FN}')
+        print(f'TOTAL\t\tDetected: {total_TP}/{total_TP+total_FN}\t\tTP {total_TP}\tFP {total_FP}\t\tFN {total_FN}')
+    
+    def check_attack_detection(self, epoch, get_data=False):
+        join_index = ['epoch', 'batch', 'element', 'type']
+        # if file does not exist, create a pandas dataframe
+        if self.get_path(epoch, tail=self.ATTACKS_APPLIED_LOG).is_file():
             applications = self._load_csv(self.ATTACKS_APPLIED_LOG, epoch).set_index(join_index)
+        else:
+            applications = pd.DataFrame(columns=join_index).set_index(join_index)
+        if self.get_path(epoch, tail=self.ATTACKS_DETECTED_LOG).is_file():
             detections = self._load_csv(self.ATTACKS_DETECTED_LOG, epoch).set_index(join_index)
-            TP = applications.join(
-                detections,
-                how='inner',
-                lsuffix='_app',
-                rsuffix='_det')
-            FN = applications.drop(TP.index)
-            FP = detections.drop(TP.index)
-            print('epoch', f'{epoch:03}', end='\t')
-            print(f'Detected: {len(TP)}/{len(applications)}', end='\t')
-            print('TP', len(TP), end='\t')
-            print('FP', len(FP), end='\t')
-            print('FN', len(FN))
+        else:
+            detections = pd.DataFrame(columns=join_index).set_index(join_index)
+        TP = applications.join(
+            detections,
+            how='inner',
+            lsuffix='_app',
+            rsuffix='_det')
+        FN = applications.drop(TP.index)
+        FP = detections.drop(TP.index)
+        if get_data:
+            return TP, FP, FN
+        else:
+            return len(TP), len(FP), len(FN)
     
     def save_config(self, config: Dict) -> None:
         self._save_yaml(config, self.CONFIG_FILE)

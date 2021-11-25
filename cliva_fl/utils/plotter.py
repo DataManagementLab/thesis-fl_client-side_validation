@@ -1,4 +1,5 @@
 from collections import defaultdict
+from os import stat
 from pathlib import Path
 from numpy import imag, zeros
 from torch.nn.modules.module import T
@@ -108,11 +109,19 @@ class Plotter:
         plt.close(fig)
         print(utils.vc(True))
     
+    @staticmethod
+    def load_plot_config(path: Path):
+        assert path.is_file(), 'Plot config file does not exist.'
+        with open(path, 'r') as f:
+            return yaml.load(f, Loader)
+    
+    @staticmethod
+    def get_plot_path(plot_cnf):
+        return Path(plot_cnf.get('log_dir')) / plot_cnf.get('plot_dir') / f"{plot_cnf.get('name')}.png"
+    
     @classmethod
     def plot_summary(cls, plot_cnf: Path) -> None:
-        assert plot_cnf.is_file(), 'Summary plot config file does not exist.'
-        with open(plot_cnf, 'r') as f:
-            plot = yaml.load(f, Loader)
+        plot = cls.load_plot_config(plot_cnf)
         log_dir = Path(plot['log_dir'])
         plot_path = log_dir / plot['plot_dir'] / '{}.png'.format(plot['name'])
         fig, ax = plt.subplots()
@@ -133,10 +142,8 @@ class Plotter:
         plt.close(fig)
     
     @classmethod
-    def plot_stats(self, plot_cnf: Path) -> None:
-        assert plot_cnf.is_file(), 'Plot config file does not exist.'
-        with open(plot_cnf, 'r') as f:
-            plot = yaml.load(f, Loader)
+    def plot_stats(cls, plot_cnf: Path) -> None:
+        plot = cls.load_plot_config(plot_cnf)
         plot_path = Path(plot.get('log_dir')) / plot.get('plot_dir') / f"{plot.get('name')}.png"
         fig, ax = plt.subplots()
         stats_sum = { metric: defaultdict(int) for metric in plot['metrics'] }
@@ -167,10 +174,8 @@ class Plotter:
         plt.close(fig)
     
     @classmethod
-    def plot_times(self, plot_cnf: Path) -> None:
-        assert plot_cnf.is_file(), 'Plot config file does not exist.'
-        with open(plot_cnf, 'r') as f:
-            plot = yaml.load(f, Loader)
+    def plot_times(cls, plot_cnf: Path) -> None:
+        plot = cls.load_plot_config(plot_cnf)
         plot_path = Path(plot.get('log_dir')) / plot.get('plot_dir') / f"{plot.get('name')}.png"
         fig, ax = plt.subplots()
         stats_sum = { metric: defaultdict(int) for metric in plot['metrics'] }
@@ -205,10 +210,8 @@ class Plotter:
         plt.close(fig)
     
     @classmethod
-    def plot_timeframes(self, plot_cnf: Path) -> None:
-        assert plot_cnf.is_file(), 'Plot config file does not exist.'
-        with open(plot_cnf, 'r') as f:
-            plot = yaml.load(f, Loader)
+    def plot_timeframes(cls, plot_cnf: Path) -> None:
+        plot = cls.load_plot_config(plot_cnf)
         plot_path = Path(plot.get('log_dir')) / plot.get('plot_dir') / f"{plot.get('name')}.png"
         fig, ax = plt.subplots()
         timeframes_dict = dict()
@@ -300,22 +303,152 @@ class Plotter:
         fig.savefig(plot_path)
         plt.close(fig)
     
+    @classmethod
+    def plot_line_times(cls, plot_cnf: Path) -> None:
+        # READ CONFIG
+        plot = cls.load_plot_config(plot_cnf)
+        plot_path = cls.get_plot_path(plot)
+
+        # COLLECT DATA
+        data = dict()
+        for el in plot['data']:
+            data[el['label']] = dict(x=plot['xvalues'], y=list(), conf=el['conf'] if 'conf' in el else dict())
+            for log_dir in el['log_dirs']:
+                exp_paths = list(Path(log_dir).glob('experiment_*'))
+                n_exp = len(exp_paths)
+                yvalue = 0.0
+                for exp_path in exp_paths:
+                    logger = Logger(base_path=log_dir, exp_name=exp_path.name)
+                    for epoch in range(1, logger.num_epochs):
+                        yvalue += logger.get_times(epoch, plot['metric']).sum()[0] / n_exp / logger.num_epochs
+                data[el['label']]['y'].append(yvalue)
+                # sys.exit(0)
+
+        # CREATE PLOT
+        cls.plot_linechart(data, plot, plot_path)
+    
+    @classmethod
+    def plot_line_memory(cls, plot_cnf: Path) -> None:
+        # READ CONFIG
+        plot = cls.load_plot_config(plot_cnf)
+        plot_path = cls.get_plot_path(plot)
+
+        # COLLECT DATA
+        data = dict()
+        for el in plot['data']:
+            data[el['label']] = dict(x=plot['xvalues'], y=list(), conf=el['conf'] if 'conf' in el else dict())
+            for log_dir in el['log_dirs']:
+                exp_paths = list(Path(log_dir).glob('experiment_*'))
+                n_exp = len(exp_paths)
+                yvalue = 0.0
+                for exp_path in exp_paths:
+                    logger = Logger(base_path=log_dir, exp_name=exp_path.name)
+                    mem = logger.load_memory_usage()
+                    yvalue +=  mem[plot['metric']].mean() / 1024 / 1024 / n_exp
+                data[el['label']]['y'].append(yvalue)
+                # sys.exit(0)
+
+        # CREATE PLOT
+        for k, v in data.items(): print(k,v)
+        cls.plot_linechart(data, plot, plot_path)
+    
+    @classmethod
+    def plot_line_quality(cls, plot_cnf: Path) -> None:
+        # READ CONFIG
+        plot = cls.load_plot_config(plot_cnf)
+        plot_path = cls.get_plot_path(plot)
+
+        # COLLECT DATA
+        data = dict()
+        for el in plot['data']:
+            data[el['label']] = dict(x=plot['xvalues'], y=list(), conf=el['conf'] if 'conf' in el else dict())
+            for log_dir in el['log_dirs']:
+                exp_paths = list(Path(log_dir).glob('experiment_*'))
+                n_exp = len(exp_paths)
+                yvalue = 0.0
+                n_metrics = 0
+                for exp_path in exp_paths:
+                    logger = Logger(base_path=log_dir, exp_name=exp_path.name)
+                    for epoch in range(1, logger.num_epochs):
+                        TP, FP, FN = logger.check_attack_detection(epoch)
+                        if plot['metric'] == 'precision': 
+                            metric = cls._calc_precision(TP, FP)
+                        if plot['metric'] == 'recall': 
+                            metric = cls._calc_recall(TP, FN)
+                        if plot['metric'] == 'f1_score': 
+                            metric = cls._calc_f1_score(
+                                cls._calc_precision(TP, FP),
+                                cls._calc_recall(TP, FN))
+                        if plot['metric'] == 'accuracy': 
+                            metric = cls._calc_accuracy(TP, 0, FP, FN)
+                        if metric:
+                            n_metrics +=1
+                            yvalue += metric
+                        # else:
+                        #     print(metric, el['label'], log_dir, exp_path.name, epoch, TP, FP, FN)
+                data[el['label']]['y'].append(yvalue/n_metrics if n_metrics else 0)
+                # sys.exit(0)
+
+        # CREATE PLOT
+        for k, v in data.items(): print(k,v)
+        cls.plot_linechart(data, plot, plot_path)
+    
+    @staticmethod
+    def plot_linechart(data, plot, plot_path: Path):
+        """
+        data = dict(
+            method1=dict(
+                x=list(),
+                y=list(),
+                conf=dict()
+            )
+        ),
+        plot = dict()
+        """
+        # CREATE PLOT
+        fig, ax = plt.subplots()
+
+        # FILL PLOT
+        for method, d in data.items():
+            ax.plot(d['x'], d['y'], label=method, **d['conf'])
+
+        # FINISH PLOT
+        ax.legend()
+        if plot.get('grid') == True: ax.grid()
+        ax.set_xlabel(plot.get('xlabel'))
+        ax.set_ylabel(plot.get('ylabel'))
+        if 'xmin' in plot: ax.set_xlim(xmin=plot['xmin'])
+        if 'xmax' in plot: ax.set_xlim(xmax=plot['xmax'])
+        if 'ymin' in plot: ax.set_ylim(ymin=plot['ymin'])
+        if 'ymax' in plot: ax.set_ylim(ymax=plot['ymax'])
+        if 'yscale' in plot: ax.set_yscale(plot['yscale'], base=plot.get('ybase', 10))
+        if 'xscale' in plot: ax.set_xscale(plot['xscale'], base=plot.get('xbase', 10))
+        ax.set_title(plot.get('title'))
+        plot_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(plot_path)
+        plt.close(fig)
+
+    
     def clear_metrics(self):
         self.logger.clear_metrics()
 
     def clear_plots(self):
         self.logger.clear_plots()
 
-    def _calc_precision(self, TP: int, FP: int) -> Optional[float]:
+    @staticmethod
+    def _calc_precision(TP: int, FP: int) -> Optional[float]:
         if not TP == 0: return TP / (TP + FP)
 
-    def _calc_recall(self, TP: int, FN: int) -> Optional[float]:
+    @staticmethod
+    def _calc_recall(TP: int, FN: int) -> Optional[float]:
         if not TP == 0: return TP / (TP + FN)
-    
-    def _calc_f1_score(self, precision: Optional[float], recall: Optional[float]) -> Optional[float]:
+
+    @staticmethod
+    def _calc_f1_score(precision: Optional[float], recall: Optional[float]) -> Optional[float]:
         if precision and recall and not precision == recall == 0: 
             return 2. * precision * recall / (precision + recall)
 
-    def _calc_accuracy(self, TP: int, TN: int, FP: int, FN: int) -> Optional[float]:
+    @staticmethod
+    def _calc_accuracy(TP: int, TN: int, FP: int, FN: int) -> Optional[float]:
         if not TP == TN == 0: return (TP + TN) / (TP + TN + FP + FN)
     
