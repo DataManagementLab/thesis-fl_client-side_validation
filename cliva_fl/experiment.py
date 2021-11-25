@@ -40,7 +40,7 @@ log.basicConfig(
 
 # MODULE IMPORTS
 from cliva_fl import training, validation, datasets, models
-from cliva_fl.utils import ValidationSet, Logger, TimeTracker, logger, register_activation_hooks, register_gradient_hooks, partial_class, load_config, time_tracker, freivalds_rounds
+from cliva_fl.utils import ValidationSet, Logger, TimeTracker, logger, register_activation_hooks, register_gradient_hooks, partial_class, load_config, time_tracker, freivalds_rounds, submul_ratio
 from cliva_fl.multiprocessing import start_validators, stop_validators
 
 class Experiment:
@@ -123,6 +123,8 @@ class Experiment:
             if guarantee:
                 if validation_method == 'freivald':
                     extra_kwargs['n_check'] = freivalds_rounds(len(self.model.layers)/2, guarantee)
+                if validation_method == 'submul':
+                    extra_kwargs['ratio'] = submul_ratio(len(self.model.layers)/2, guarantee)
             log.info(f"extra_kwargs: {extra_kwargs}")
 
             self.validation_id = SEPARATOR.join((validation_type, validation_method))
@@ -228,7 +230,7 @@ class Experiment:
                 self.time_tracker.stop('raw_time_training')
 
                 # GET GRADIENTS
-                self.time_tracker.start('raw_time_extract_gradients')
+                # self.time_tracker.start('raw_time_extract_gradients')
                 name = list(activations.keys())[0]
                 gradients[name].append(None)
                 gradients[name].append(self.model.layers[0].weight.grad.detach().cpu())
@@ -242,7 +244,7 @@ class Experiment:
                 #             gradients[name].append(module.weight.grad.detach().cpu())
                 #             gradients[name].append(module.bias.grad.detach().cpu())
                 #             break
-                self.time_tracker.stop('raw_time_extract_gradients')
+                # self.time_tracker.stop('raw_time_extract_gradients')
 
                 # for key in activations.keys():
                 #     l =  getattr(self.model, key)

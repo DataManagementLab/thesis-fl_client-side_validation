@@ -35,3 +35,6 @@ def tensors_close_sum(tensor1: torch.Tensor, tensor2: torch.Tensor, rtol=1e-07, 
 
 def freivalds_rounds(n_layers, guarantee):
     return ceil(log(1 - pow(guarantee, 1/(3*n_layers-1)),0.5))
+
+def submul_ratio(n_layers, guarantee):
+    return pow(guarantee, 1/(3*n_layers-1))
