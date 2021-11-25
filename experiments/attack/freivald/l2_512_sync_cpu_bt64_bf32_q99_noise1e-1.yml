@@ -29,7 +29,7 @@ training:
   n_epochs: 5 # 20
   max_buffer_len: 32
   shuffle_batches: False
-  log_dir: exp_attack_freivald_l2_512_sync_cpu_bt64_bf32_q99_noise1e-1
+  log_dir: exp_attack_freivald_l2_512_sync_cpu_bt64_bf32_n1_noise1e-1
   # training_method: no_attack
   # training_params: {}
   # training_method: targeted_attack
@@ -50,8 +50,8 @@ validation:
   validation_method: freivald # submul # gvfa # freivald # matmul
   verbose: False
   silent: True
-  # n_check: 1
-  guarantee: 0.99
+  n_check: 1
+  # guarantee: 0.99
   validation_delay: 0
   monitor_memory: False
   use_queue: False

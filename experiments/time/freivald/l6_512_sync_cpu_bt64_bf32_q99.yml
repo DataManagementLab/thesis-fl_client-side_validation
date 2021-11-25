@@ -29,7 +29,7 @@ training:
   n_epochs: 5 # 20
   max_buffer_len: 32
   shuffle_batches: False
-  log_dir: exp_freivald_l6_512_sync_cpu_bt64_bf32_q99
+  log_dir: exp_time_freivald_l6_512_sync_cpu_bt64_bf32_q99
   training_method: no_attack
   training_params: {}
   # training_method: targeted_attack

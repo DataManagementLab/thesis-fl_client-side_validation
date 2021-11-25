@@ -25,8 +25,8 @@ loss_fn:
   params:
 training:
   seed: 0
-  use_gpu: True
-  n_epochs: 20 # 20
+  use_gpu: False
+  n_epochs: 5 # 20
   max_buffer_len: 32
   shuffle_batches: False
   log_dir: times_test #_queue_nowait #async_manager #freivalds_async_cpu_disk
@@ -47,10 +47,10 @@ validation:
   async_validators: 0
   async_disk_queue: False
   validation_type: extract
-  validation_method: gvfa # submul # gvfa # freivald # matmul
+  validation_method: submul # submul # gvfa # freivald # matmul
   verbose: False
   silent: True
-  n_check: 1
+  # n_check: 1
   # guarantee: 0.99
   validation_delay: 0
   monitor_memory: False
