@@ -45,17 +45,17 @@ fi
 
 if $EXPERIMENT_BUFFER_SIZE; then
 echo "===== MEMORY EXPERIMENT_BUFFER_SIZE ====="
-echo "===== MEMORY EXPERIMENT_BUFFER_SIZE | Freivald ====="
-python run_exp.py -r $N -c experiments/memory/freivald/l2_512_async_cpu_bt64_bf8_n1.yml
-python run_exp.py -r $N -c experiments/memory/freivald/l2_512_async_cpu_bt64_bf16_n1.yml
-python run_exp.py -r $N -c experiments/memory/freivald/l2_512_async_cpu_bt64_bf32_n1.yml
-python run_exp.py -r $N -c experiments/memory/freivald/l2_512_async_cpu_bt64_bf64_n1.yml
+# echo "===== MEMORY EXPERIMENT_BUFFER_SIZE | Freivald ====="
+# python run_exp.py -r $N -c experiments/memory/freivald/l2_512_async_cpu_bt64_bf8_n1.yml
+# python run_exp.py -r $N -c experiments/memory/freivald/l2_512_async_cpu_bt64_bf16_n1.yml
+# python run_exp.py -r $N -c experiments/memory/freivald/l2_512_async_cpu_bt64_bf32_n1.yml
+# python run_exp.py -r $N -c experiments/memory/freivald/l2_512_async_cpu_bt64_bf64_n1.yml
 
-echo "===== MEMORY EXPERIMENT_BUFFER_SIZE | MatMul ====="
-python run_exp.py -r $N -c experiments/memory/matmul/l2_512_async_cpu_bt64_bf8_n1.yml
-python run_exp.py -r $N -c experiments/memory/matmul/l2_512_async_cpu_bt64_bf16_n1.yml
-python run_exp.py -r $N -c experiments/memory/matmul/l2_512_async_cpu_bt64_bf32_n1.yml
-python run_exp.py -r $N -c experiments/memory/matmul/l2_512_async_cpu_bt64_bf64_n1.yml
+# echo "===== MEMORY EXPERIMENT_BUFFER_SIZE | MatMul ====="
+# python run_exp.py -r $N -c experiments/memory/matmul/l2_512_async_cpu_bt64_bf8_n1.yml
+# python run_exp.py -r $N -c experiments/memory/matmul/l2_512_async_cpu_bt64_bf16_n1.yml
+# python run_exp.py -r $N -c experiments/memory/matmul/l2_512_async_cpu_bt64_bf32_n1.yml
+# python run_exp.py -r $N -c experiments/memory/matmul/l2_512_async_cpu_bt64_bf64_n1.yml
 
 echo "===== MEMORY EXPERIMENT_BUFFER_SIZE | SubMul ====="
 python run_exp.py -r $N -c experiments/memory/submul/l2_512_async_cpu_bt64_bf8_n1.yml

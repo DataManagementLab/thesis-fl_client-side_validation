@@ -49,6 +49,6 @@ validation:
   verbose: False
   silent: True
   # guarantee: 0.99
-  n_check: 1
+  # n_check: 1
   monitor_memory: True
   # val_prob: 0
