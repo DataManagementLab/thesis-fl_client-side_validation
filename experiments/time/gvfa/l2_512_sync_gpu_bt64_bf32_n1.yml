@@ -25,11 +25,11 @@ loss_fn:
   params:
 training:
   # seed: 0
-  use_gpu: False
+  use_gpu: True
   n_epochs: 5 # 20
-  max_buffer_len: 16
+  max_buffer_len: 32
   shuffle_batches: False
-  log_dir: exp_mem_freivald_l2_512_async_cpu_bt64_bf16_n1
+  log_dir: exp_time_gvfa_l2_512_sync_gpu_bt64_bf32_n1
   training_method: no_attack
   training_params: {}
   # training_method: targeted_attack
@@ -42,13 +42,12 @@ training:
   #   scale: 0.25
 validation:
   run_validation: True
-  async_validators: 1
+  async_validators: 0
   async_disk_queue: False
   validation_type: extract
-  validation_method: freivald # submul # gvfa # freivald # matmul
+  validation_method: gvfa # submul # gvfa # freivald # matmul
   verbose: False
   silent: True
   # guarantee: 0.99
   n_check: 1
-  monitor_memory: True
   # val_prob: 0

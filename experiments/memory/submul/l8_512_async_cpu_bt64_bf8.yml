@@ -14,7 +14,7 @@ dataset:
 model:
   type: ReLuMLP
   params:
-    layers: [784, 512, 512, 10]
+    layers: [784, 512, 512, 512, 512, 512, 512, 512, 512, 10]
 optimizer:
   type: SGD
   params:
@@ -27,9 +27,9 @@ training:
   # seed: 0
   use_gpu: False
   n_epochs: 5 # 20
-  max_buffer_len: 16
+  max_buffer_len: 8
   shuffle_batches: False
-  log_dir: exp_mem_submul_l2_512_async_cpu_bt64_bf16_n1
+  log_dir: exp_mem_submul_l8_512_async_cpu_bt64_bf8
   training_method: no_attack
   training_params: {}
   # training_method: targeted_attack

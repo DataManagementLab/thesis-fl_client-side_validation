@@ -3,93 +3,121 @@
 N=5
 
 # TIME Experiments
-EXPERIMENT_METHOD_SCALABILITY=true
-EXPERIMENT_GUARANTEE_SCALABILITY=false
+EXP_TIME_METHOD_SCALABILITY=true
+EXP_TIME_GUARANTEE_SCALABILITY=false
+EXP_TIME_DEVICE_CONCURRENCY=true
 
 # SPACE Experiments
-EXPERIMENT_BUFFER_SIZE=false
+EXP_MEM_MODEL_SIZE=true
 
 # QUALITY Experiments
-EXPERIMENT_VARYING_NOISE=true
+EXP_ATTACK_VARYING_NOISE=false
 
 
-if $EXPERIMENT_METHOD_SCALABILITY; then
-echo "===== TIME EXPERIMENT_METHOD_SCALABILITY ====="
-# echo "===== TIME EXPERIMENT_METHOD_SCALABILITY | Freivald ====="
-# python run_exp.py -r $N -c experiments/time/freivald/l2_512_sync_cpu_bt64_bf32_n1.yml
-# python run_exp.py -r $N -c experiments/time/freivald/l4_512_sync_cpu_bt64_bf32_n1.yml
-# python run_exp.py -r $N -c experiments/time/freivald/l6_512_sync_cpu_bt64_bf32_n1.yml
-# python run_exp.py -r $N -c experiments/time/freivald/l8_512_sync_cpu_bt64_bf32_n1.yml
+if $EXP_TIME_METHOD_SCALABILITY; then
+echo "===== EXP_TIME_METHOD_SCALABILITY ====="
+dirs=(
+# experiments/time/freivald/l2_512_sync_cpu_bt64_bf32_n1.yml
+# experiments/time/freivald/l4_512_sync_cpu_bt64_bf32_n1.yml
+# experiments/time/freivald/l6_512_sync_cpu_bt64_bf32_n1.yml
+# experiments/time/freivald/l8_512_sync_cpu_bt64_bf32_n1.yml
 
-# echo "===== TIME EXPERIMENT_METHOD_SCALABILITY | MatMul ====="
-# python run_exp.py -r $N -c experiments/time/matmul/l2_512_sync_cpu_bt64_bf32_n1.yml
-# python run_exp.py -r $N -c experiments/time/matmul/l4_512_sync_cpu_bt64_bf32_n1.yml
-# python run_exp.py -r $N -c experiments/time/matmul/l6_512_sync_cpu_bt64_bf32_n1.yml
-# python run_exp.py -r $N -c experiments/time/matmul/l8_512_sync_cpu_bt64_bf32_n1.yml
+experiments/time/gvfa/l2_512_sync_cpu_bt64_bf32_n1.yml
+experiments/time/gvfa/l4_512_sync_cpu_bt64_bf32_n1.yml
+experiments/time/gvfa/l6_512_sync_cpu_bt64_bf32_n1.yml
+experiments/time/gvfa/l8_512_sync_cpu_bt64_bf32_n1.yml
 
-echo "===== TIME EXPERIMENT_METHOD_SCALABILITY | Retrain ====="
-python run_exp.py -r $N -c experiments/time/retrain/l2_512_sync_cpu_bt64_bf32_n1.yml
-# python run_exp.py -r $N -c experiments/time/retrain/l4_512_sync_cpu_bt64_bf32_n1.yml
-# python run_exp.py -r $N -c experiments/time/retrain/l6_512_sync_cpu_bt64_bf32_n1.yml
-# python run_exp.py -r $N -c experiments/time/retrain/l8_512_sync_cpu_bt64_bf32_n1.yml
+# experiments/time/matmul/l2_512_sync_cpu_bt64_bf32_n1.yml
+# experiments/time/matmul/l4_512_sync_cpu_bt64_bf32_n1.yml
+# experiments/time/matmul/l6_512_sync_cpu_bt64_bf32_n1.yml
+# experiments/time/matmul/l8_512_sync_cpu_bt64_bf32_n1.yml
 
-# echo "===== TIME EXPERIMENT_METHOD_SCALABILITY | SubMul ====="
-# python run_exp.py -r $N -c experiments/time/submul/l2_512_sync_cpu_bt64_bf32_n1.yml
-# python run_exp.py -r $N -c experiments/time/submul/l4_512_sync_cpu_bt64_bf32_n1.yml
-# python run_exp.py -r $N -c experiments/time/submul/l6_512_sync_cpu_bt64_bf32_n1.yml
-# python run_exp.py -r $N -c experiments/time/submul/l8_512_sync_cpu_bt64_bf32_n1.yml
+experiments/time/retrain/l2_512_sync_cpu_bt64_bf32_n1.yml
+# experiments/time/retrain/l4_512_sync_cpu_bt64_bf32_n1.yml
+# experiments/time/retrain/l6_512_sync_cpu_bt64_bf32_n1.yml
+# experiments/time/retrain/l8_512_sync_cpu_bt64_bf32_n1.yml
+
+# experiments/time/submul/l2_512_sync_cpu_bt64_bf32_n1.yml
+# experiments/time/submul/l4_512_sync_cpu_bt64_bf32_n1.yml
+# experiments/time/submul/l6_512_sync_cpu_bt64_bf32_n1.yml
+# experiments/time/submul/l8_512_sync_cpu_bt64_bf32_n1.yml
+)
+for dir in "${dirs[@]}"; do python run_exp.py -r $N -c "$dir"; done
 fi
 
-if $EXPERIMENT_GUARANTEE_SCALABILITY; then
-echo "===== TIME EXPERIMENT_GUARANTEE_SCALABILITY ====="
-echo "===== TIME EXPERIMENT_GUARANTEE_SCALABILITY | Freivald ====="
-python run_exp.py -r $N -c experiments/time/freivald/l2_512_sync_cpu_bt64_bf32_q99.yml
-python run_exp.py -r $N -c experiments/time/freivald/l4_512_sync_cpu_bt64_bf32_q99.yml
-python run_exp.py -r $N -c experiments/time/freivald/l6_512_sync_cpu_bt64_bf32_q99.yml
-python run_exp.py -r $N -c experiments/time/freivald/l8_512_sync_cpu_bt64_bf32_q99.yml
+if $EXP_TIME_GUARANTEE_SCALABILITY; then
+echo "===== EXP_TIME_GUARANTEE_SCALABILITY ====="
+dirs=(
+experiments/time/freivald/l2_512_sync_cpu_bt64_bf32_q99.yml
+experiments/time/freivald/l4_512_sync_cpu_bt64_bf32_q99.yml
+experiments/time/freivald/l6_512_sync_cpu_bt64_bf32_q99.yml
+experiments/time/freivald/l8_512_sync_cpu_bt64_bf32_q99.yml
+)
+for dir in "${dirs[@]}"; do python run_exp.py -r $N -c "$dir"; done
 fi
 
-if $EXPERIMENT_BUFFER_SIZE; then
-echo "===== MEMORY EXPERIMENT_BUFFER_SIZE ====="
-echo "===== MEMORY EXPERIMENT_BUFFER_SIZE | Freivald ====="
-python run_exp.py -r $N -c experiments/memory/freivald/l2_512_async_cpu_bt64_bf8_n1.yml
-python run_exp.py -r $N -c experiments/memory/freivald/l2_512_async_cpu_bt64_bf16_n1.yml
-python run_exp.py -r $N -c experiments/memory/freivald/l2_512_async_cpu_bt64_bf32_n1.yml
-python run_exp.py -r $N -c experiments/memory/freivald/l2_512_async_cpu_bt64_bf64_n1.yml
-
-echo "===== MEMORY EXPERIMENT_BUFFER_SIZE | MatMul ====="
-python run_exp.py -r $N -c experiments/memory/matmul/l2_512_async_cpu_bt64_bf8_n1.yml
-python run_exp.py -r $N -c experiments/memory/matmul/l2_512_async_cpu_bt64_bf16_n1.yml
-python run_exp.py -r $N -c experiments/memory/matmul/l2_512_async_cpu_bt64_bf32_n1.yml
-python run_exp.py -r $N -c experiments/memory/matmul/l2_512_async_cpu_bt64_bf64_n1.yml
-
-echo "===== MEMORY EXPERIMENT_BUFFER_SIZE | SubMul ====="
-python run_exp.py -r $N -c experiments/memory/submul/l2_512_async_cpu_bt64_bf8_n1.yml
-python run_exp.py -r $N -c experiments/memory/submul/l2_512_async_cpu_bt64_bf16_n1.yml
-python run_exp.py -r $N -c experiments/memory/submul/l2_512_async_cpu_bt64_bf32_n1.yml
-python run_exp.py -r $N -c experiments/memory/submul/l2_512_async_cpu_bt64_bf64_n1.yml
+if $EXP_TIME_DEVICE_CONCURRENCY; then
+echo "===== EXP_TIME_DEVICE_CONCURRENCY ====="
+dirs=(
+experiments/time/gvfa/l2_512_async_cpu_bt64_bf32_n1.yml
+experiments/time/gvfa/l2_512_async_gpu_bt64_bf32_n1.yml
+# experiments/time/gvfa/l2_512_sync_cpu_bt64_bf32_n1.yml # Available from other Benchmark
+experiments/time/gvfa/l2_512_sync_gpu_bt64_bf32_n1.yml
+)
+for dir in "${dirs[@]}"; do python run_exp.py -r $N -c "$dir"; done
 fi
 
-if $EXPERIMENT_VARYING_NOISE; then
-echo "===== QUALITY EXPERIMENT_VARYING_NOISE ====="
-echo "===== QUALITY EXPERIMENT_VARYING_NOISE | Freivald ====="
-python run_exp.py -r $N -c experiments/attack/freivald/l2_512_sync_cpu_bt64_bf32_n1_noise1e-2.yml
-python run_exp.py -r $N -c experiments/attack/freivald/l2_512_sync_cpu_bt64_bf32_n1_noise1e-1.yml
-python run_exp.py -r $N -c experiments/attack/freivald/l2_512_sync_cpu_bt64_bf32_n1_noise1e-3.yml
-python run_exp.py -r $N -c experiments/attack/freivald/l2_512_sync_cpu_bt64_bf32_n1_noise1e-4.yml
-python run_exp.py -r $N -c experiments/attack/freivald/l2_512_sync_cpu_bt64_bf32_n1_noise1e-5.yml
+if $EXP_MEM_MODEL_SIZE; then
+echo "===== EXP_MEM_MODEL_SIZE ====="
+dirs=(
+experiments/memory/freivald/l2_512_async_cpu_bt64_bf8_n1.yml
+experiments/memory/freivald/l4_512_async_cpu_bt64_bf8_n1.yml
+experiments/memory/freivald/l6_512_async_cpu_bt64_bf8_n1.yml
+experiments/memory/freivald/l8_512_async_cpu_bt64_bf8_n1.yml
 
-# echo "===== QUALITY EXPERIMENT_VARYING_NOISE | GVFA ====="
-# python run_exp.py -r $N -c experiments/attack/gvfa/l2_512_sync_cpu_bt64_bf32_n1_noise1e-1.yml
-# python run_exp.py -r $N -c experiments/attack/gvfa/l2_512_sync_cpu_bt64_bf32_n1_noise1e-2.yml
-# python run_exp.py -r $N -c experiments/attack/gvfa/l2_512_sync_cpu_bt64_bf32_n1_noise1e-3.yml
-# python run_exp.py -r $N -c experiments/attack/gvfa/l2_512_sync_cpu_bt64_bf32_n1_noise1e-4.yml
-# python run_exp.py -r $N -c experiments/attack/gvfa/l2_512_sync_cpu_bt64_bf32_n1_noise1e-5.yml
+experiments/memory/gvfa/l2_512_async_cpu_bt64_bf8_n1.yml
+experiments/memory/gvfa/l4_512_async_cpu_bt64_bf8_n1.yml
+experiments/memory/gvfa/l6_512_async_cpu_bt64_bf8_n1.yml
+experiments/memory/gvfa/l8_512_async_cpu_bt64_bf8_n1.yml
 
-echo "===== QUALITY EXPERIMENT_VARYING_NOISE | SubMul ====="
-python run_exp.py -r $N -c experiments/attack/submul/l2_512_sync_cpu_bt64_bf32_s50_noise1e-1.yml
-python run_exp.py -r $N -c experiments/attack/submul/l2_512_sync_cpu_bt64_bf32_s50_noise1e-2.yml
-python run_exp.py -r $N -c experiments/attack/submul/l2_512_sync_cpu_bt64_bf32_s50_noise1e-3.yml
-python run_exp.py -r $N -c experiments/attack/submul/l2_512_sync_cpu_bt64_bf32_s50_noise1e-4.yml
-python run_exp.py -r $N -c experiments/attack/submul/l2_512_sync_cpu_bt64_bf32_s50_noise1e-5.yml
+experiments/memory/matmul/l2_512_async_cpu_bt64_bf8.yml
+experiments/memory/matmul/l4_512_async_cpu_bt64_bf8.yml
+experiments/memory/matmul/l6_512_async_cpu_bt64_bf8.yml
+experiments/memory/matmul/l8_512_async_cpu_bt64_bf8.yml
+
+experiments/memory/retrain/l2_512_async_cpu_bt64_bf8.yml
+experiments/memory/retrain/l4_512_async_cpu_bt64_bf8.yml
+experiments/memory/retrain/l6_512_async_cpu_bt64_bf8.yml
+experiments/memory/retrain/l8_512_async_cpu_bt64_bf8.yml
+
+experiments/memory/submul/l2_512_async_cpu_bt64_bf8.yml
+experiments/memory/submul/l4_512_async_cpu_bt64_bf8.yml
+experiments/memory/submul/l6_512_async_cpu_bt64_bf8.yml
+experiments/memory/submul/l8_512_async_cpu_bt64_bf8.yml
+)
+for dir in "${dirs[@]}"; do python run_exp.py -r $N -c "$dir"; done
+fi
+
+if $EXP_ATTACK_VARYING_NOISE; then
+echo "===== EXP_ATTACK_VARYING_NOISE ====="
+dirs=(
+experiments/attack/freivald/l2_512_sync_cpu_bt64_bf32_n1_noise1e-2.yml
+experiments/attack/freivald/l2_512_sync_cpu_bt64_bf32_n1_noise1e-1.yml
+experiments/attack/freivald/l2_512_sync_cpu_bt64_bf32_n1_noise1e-3.yml
+experiments/attack/freivald/l2_512_sync_cpu_bt64_bf32_n1_noise1e-4.yml
+experiments/attack/freivald/l2_512_sync_cpu_bt64_bf32_n1_noise1e-5.yml
+
+experiments/attack/gvfa/l2_512_sync_cpu_bt64_bf32_n1_noise1e-1.yml
+experiments/attack/gvfa/l2_512_sync_cpu_bt64_bf32_n1_noise1e-2.yml
+experiments/attack/gvfa/l2_512_sync_cpu_bt64_bf32_n1_noise1e-3.yml
+experiments/attack/gvfa/l2_512_sync_cpu_bt64_bf32_n1_noise1e-4.yml
+experiments/attack/gvfa/l2_512_sync_cpu_bt64_bf32_n1_noise1e-5.yml
+
+experiments/attack/submul/l2_512_sync_cpu_bt64_bf32_s50_noise1e-1.yml
+experiments/attack/submul/l2_512_sync_cpu_bt64_bf32_s50_noise1e-2.yml
+experiments/attack/submul/l2_512_sync_cpu_bt64_bf32_s50_noise1e-3.yml
+experiments/attack/submul/l2_512_sync_cpu_bt64_bf32_s50_noise1e-4.yml
+experiments/attack/submul/l2_512_sync_cpu_bt64_bf32_s50_noise1e-5.yml
+)
+for dir in "${dirs[@]}"; do python run_exp.py -r $N -c "$dir"; done
 fi

@@ -27,9 +27,9 @@ training:
   # seed: 0
   use_gpu: False
   n_epochs: 5 # 20
-  max_buffer_len: 50 #32
+  max_buffer_len: 32
   shuffle_batches: False
-  log_dir: exp_time_retrain_l2_512_sync_cpu_bt64_bf32_n1
+  log_dir: exp_time_gvfa_l2_512_sync_cpu_bt64_bf32_n1
   training_method: no_attack
   training_params: {}
   # training_method: targeted_attack
@@ -44,10 +44,10 @@ validation:
   run_validation: True
   async_validators: 0
   async_disk_queue: False
-  validation_type: retrain
-  # validation_method: freivald # submul # gvfa # freivald # matmul
+  validation_type: extract
+  validation_method: gvfa # submul # gvfa # freivald # matmul
   verbose: False
   silent: True
   # guarantee: 0.99
-  # n_check: 1
+  n_check: 1
   # val_prob: 0
