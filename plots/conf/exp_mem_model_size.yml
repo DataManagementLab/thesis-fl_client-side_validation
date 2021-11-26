@@ -2,7 +2,7 @@
 log_dir: thesis_plots
 plot_dir: evaluation
 name: exp_mem_model_size
-title: comparison of validation memory
+title: Memory Usage / Model Size for Validation
 xlabel: number of layers
 ylabel: memory in MB
 ymin: 0

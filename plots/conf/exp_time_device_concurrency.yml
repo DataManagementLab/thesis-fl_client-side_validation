@@ -2,7 +2,7 @@
 log_dir: thesis_plots
 plot_dir: evaluation
 name: exp_time_device_concurrency
-title: comparison of validation methods
+title: Total Training Time of GVFA
 # xlabel: epochs
 xlabel: time (sec)
 # ymin: 0
@@ -17,9 +17,9 @@ label_synct: train & valid
 color_train: lightsteelblue
 color_valid: salmon
 color_synct: peachpuff
-metrics:
-- total_time_training
-- total_time_validation
+# metrics:
+# - total_time_training
+# - total_time_validation
 # - validate_activations
 # - validate_gradients
 # - validate_loss
@@ -28,12 +28,18 @@ metrics:
 data:
 - log_dir: exp_time_gvfa_l2_512_sync_gpu_bt64_bf32_n1_noval
   label: noval gpu
+  conf:
+    type: train only
+    color: green 
 - log_dir: exp_time_gvfa_l2_512_async_gpu_bt64_bf32_n1
   label: async gpu
 - log_dir: exp_time_gvfa_l2_512_sync_gpu_bt64_bf32_n1_queue
   label: sync gpu
 - log_dir: exp_time_gvfa_l2_512_sync_cpu_bt64_bf32_n1_noval
   label: noval cpu
+  conf:
+    type: train only
+    color: green
 - log_dir: exp_time_gvfa_l2_512_async_cpu_bt64_bf32_n1
   label: async cpu
 - log_dir: exp_time_gvfa_l2_512_sync_cpu_bt64_bf32_n1_queue

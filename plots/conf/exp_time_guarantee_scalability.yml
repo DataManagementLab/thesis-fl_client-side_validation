@@ -2,7 +2,7 @@
 log_dir: thesis_plots
 plot_dir: evaluation
 name: exp_time_guarantee_scalability
-title: scalability of validation methods with fixed guarantee
+title: Scalability of Validation Methods (fix 99% guarantee)
 xlabel: number of layers
 ylabel: validation time / epoch (sec)
 # ymin: 0

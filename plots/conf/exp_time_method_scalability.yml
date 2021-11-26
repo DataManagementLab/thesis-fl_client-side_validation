@@ -2,7 +2,7 @@
 log_dir: thesis_plots
 plot_dir: evaluation
 name: exp_time_method_scalability
-title: scalability of validation methods
+title: Scalability of Validation Methods
 xlabel: number of layers
 ylabel: validation time / epoch (sec)
 # ymin: 0
