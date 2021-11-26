@@ -5,14 +5,14 @@ N=5
 # TIME Experiments
 EXP_TIME_METHOD_SCALABILITY=false
 EXP_TIME_GUARANTEE_SCALABILITY=false
-EXP_TIME_DEVICE_CONCURRENCY=true
+EXP_TIME_DEVICE_CONCURRENCY=false
 
 # SPACE Experiments
 EXP_MEM_MODEL_SIZE=false
 
 # QUALITY Experiments
-EXP_ATTACK_VARYING_NOISE=false
-EXP_TIME_ATTACK_VARYING_GUARANTEE=true
+EXP_ATTACK_VARYING_NOISE=true
+EXP_TIME_ATTACK_VARYING_GUARANTEE=false
 
 
 if $EXP_TIME_METHOD_SCALABILITY; then
@@ -62,8 +62,10 @@ echo "===== EXP_TIME_DEVICE_CONCURRENCY ====="
 dirs=(
 experiments/time/gvfa/l2_512_sync_gpu_bt64_bf32_n1_queue.yml
 experiments/time/gvfa/l2_512_sync_cpu_bt64_bf32_n1_queue.yml
-# experiments/time/gvfa/l2_512_async_gpu_bt64_bf32_n1.yml
-# experiments/time/gvfa/l2_512_async_cpu_bt64_bf32_n1.yml
+experiments/time/gvfa/l2_512_async_gpu_bt64_bf32_n1.yml
+experiments/time/gvfa/l2_512_async_cpu_bt64_bf32_n1.yml
+experiments/time/gvfa/l2_512_sync_gpu_bt64_bf32_n1_noval.yml
+experiments/time/gvfa/l2_512_sync_cpu_bt64_bf32_n1_noval.yml
 )
 for dir in "${dirs[@]}"; do python run_exp.py -r $N -c "$dir"; done
 fi
@@ -102,8 +104,8 @@ fi
 if $EXP_ATTACK_VARYING_NOISE; then
 echo "===== EXP_ATTACK_VARYING_NOISE ====="
 dirs=(
-experiments/attack/freivald/l2_512_sync_cpu_bt64_bf32_n1_noise1e-2.yml
 experiments/attack/freivald/l2_512_sync_cpu_bt64_bf32_n1_noise1e-1.yml
+experiments/attack/freivald/l2_512_sync_cpu_bt64_bf32_n1_noise1e-2.yml
 experiments/attack/freivald/l2_512_sync_cpu_bt64_bf32_n1_noise1e-3.yml
 experiments/attack/freivald/l2_512_sync_cpu_bt64_bf32_n1_noise1e-4.yml
 experiments/attack/freivald/l2_512_sync_cpu_bt64_bf32_n1_noise1e-5.yml

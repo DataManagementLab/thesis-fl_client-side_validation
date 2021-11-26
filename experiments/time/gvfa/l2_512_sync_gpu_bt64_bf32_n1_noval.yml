@@ -25,36 +25,30 @@ loss_fn:
   params:
 training:
   # seed: 0
-  use_gpu: False
+  use_gpu: True
   n_epochs: 5 # 20
   max_buffer_len: 32
   shuffle_batches: False
-  log_dir: exp_attack_submul_l2_512_sync_cpu_bt64_bf32_s50_p1_noise1e-5
-  # training_method: no_attack
-  # training_params: {}
+  log_dir: exp_time_gvfa_l2_512_sync_gpu_bt64_bf32_n1_noval
+  training_method: no_attack
+  training_params: {}
   # training_method: targeted_attack
   # training_params:
   #   boosting: True
   #   boost_factor: 50
-  training_method: untargeted_attack
-  training_params:
-    frequency: 0.1
-    scale: 0.00001
-    corrupt_neurons: 1
-    random_noise: False
+  # training_method: untargeted_attack
+  # training_params:
+  #   frequency: 0.1
+  #   scale: 0.25
 validation:
-  run_validation: True
+  run_validation: False
   async_validators: 0
   async_disk_queue: False
   validation_type: extract
-  validation_method: submul # submul # gvfa # freivald # matmul
+  validation_method: gvfa # submul # gvfa # freivald # matmul
   verbose: False
   silent: True
-  # n_check: 1
   # guarantee: 0.99
-  validation_delay: 0
-  monitor_memory: False
-  use_queue: False
-  atol: 0.0001
-  # rtol: 0.0001
+  n_check: 1
+  use_queue: True
   # val_prob: 0

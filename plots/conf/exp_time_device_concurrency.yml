@@ -26,12 +26,16 @@ metrics:
 # - validate_weights
 # - validate_retrain
 data:
-- log_dir: exp_time_gvfa_l2_512_sync_gpu_bt64_bf32_n1_queue
-  label: sync gpu
-- log_dir: exp_time_gvfa_l2_512_sync_cpu_bt64_bf32_n1_queue
-  label: sync cpu
+- log_dir: exp_time_gvfa_l2_512_sync_gpu_bt64_bf32_n1_noval
+  label: noval gpu
 - log_dir: exp_time_gvfa_l2_512_async_gpu_bt64_bf32_n1
   label: async gpu
+- log_dir: exp_time_gvfa_l2_512_sync_gpu_bt64_bf32_n1_queue
+  label: sync gpu
+- log_dir: exp_time_gvfa_l2_512_sync_cpu_bt64_bf32_n1_noval
+  label: noval cpu
 - log_dir: exp_time_gvfa_l2_512_async_cpu_bt64_bf32_n1
   label: async cpu
+- log_dir: exp_time_gvfa_l2_512_sync_cpu_bt64_bf32_n1_queue
+  label: sync cpu
 ...

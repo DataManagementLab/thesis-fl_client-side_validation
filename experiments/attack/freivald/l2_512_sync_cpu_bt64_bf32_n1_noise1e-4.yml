@@ -29,7 +29,7 @@ training:
   n_epochs: 5 # 20
   max_buffer_len: 32
   shuffle_batches: False
-  log_dir: exp_attack_freivald_l2_512_sync_cpu_bt64_bf32_n1_noise1e-4
+  log_dir: exp_attack_freivald_l2_512_sync_cpu_bt64_bf32_n1_p1_noise1e-4
   # training_method: no_attack
   # training_params: {}
   # training_method: targeted_attack
@@ -40,7 +40,7 @@ training:
   training_params:
     frequency: 0.1
     scale: 0.0001
-    corrupt_neurons: 5
+    corrupt_neurons: 1
     random_noise: False
 validation:
   run_validation: True

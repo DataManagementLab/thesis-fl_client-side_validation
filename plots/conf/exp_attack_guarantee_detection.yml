@@ -1,0 +1,62 @@
+---
+log_dir: thesis_plots
+plot_dir: evaluation
+name: exp_attack_guarantee_detection
+title: F1-score / Correctness Guarantee
+xlabel: guarantee in %
+ylabel: f1-score
+ymin: 0
+# ymax: 1
+# grid: True
+# xscale: log
+metric: f1_score
+xvalues: [25, 50, 75, 90, 99]
+data:
+- label: freivalds
+  # conf:
+  #   color: red
+  log_dirs: [
+    exp_time_attack_freivald_l2_512_sync_cpu_bt64_bf32_q25_noise5e-4,
+    exp_time_attack_freivald_l2_512_sync_cpu_bt64_bf32_q50_noise5e-4,
+    exp_time_attack_freivald_l2_512_sync_cpu_bt64_bf32_q75_noise5e-4,
+    exp_time_attack_freivald_l2_512_sync_cpu_bt64_bf32_q90_noise5e-4,
+    exp_time_attack_freivald_l2_512_sync_cpu_bt64_bf32_q99_noise5e-4
+  ]
+# - label: gvfa
+  # conf:
+  #   - color: orange
+#   log_dirs: [
+#     exp_time_gvfa_l2_512_sync_cpu_bt64_bf32_n1,
+#     exp_time_gvfa_l4_512_sync_cpu_bt64_bf32_n1,
+#     exp_time_gvfa_l6_512_sync_cpu_bt64_bf32_n1,
+#     exp_time_gvfa_l8_512_sync_cpu_bt64_bf32_n1
+#   ]
+- label: submul
+  # conf:
+  #   color: blue
+  log_dirs: [
+    exp_time_attack_submul_l2_512_sync_cpu_bt64_bf32_q25_noise5e-4,
+    exp_time_attack_submul_l2_512_sync_cpu_bt64_bf32_q50_noise5e-4,
+    exp_time_attack_submul_l2_512_sync_cpu_bt64_bf32_q75_noise5e-4,
+    exp_time_attack_submul_l2_512_sync_cpu_bt64_bf32_q90_noise5e-4,
+    exp_time_attack_submul_l2_512_sync_cpu_bt64_bf32_q99_noise5e-4
+  ]
+# - label: matmul
+#   # conf:
+#   #   color: green
+#   log_dirs: [
+#     exp_time_matmul_l2_512_sync_cpu_bt64_bf32_n1,
+#     exp_time_matmul_l4_512_sync_cpu_bt64_bf32_n1,
+#     exp_time_matmul_l6_512_sync_cpu_bt64_bf32_n1,
+#     exp_time_matmul_l8_512_sync_cpu_bt64_bf32_n1
+#   ]
+# - label: retrain
+#   # conf:
+#   #   color: purple
+#   log_dirs: [
+#     exp_time_retrain_l2_512_sync_cpu_bt64_bf32_n1,
+#     exp_time_retrain_l4_512_sync_cpu_bt64_bf32_n1,
+#     exp_time_retrain_l6_512_sync_cpu_bt64_bf32_n1,
+#     exp_time_retrain_l8_512_sync_cpu_bt64_bf32_n1
+#   ]
+...
