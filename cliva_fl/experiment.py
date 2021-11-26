@@ -187,17 +187,18 @@ class Experiment:
         train_stats = pd.DataFrame(columns=self.TRAIN_METRICS)
 
         # LAUNCH VALIDATORS, LOCK AND QUEUE
-        if self.use_queue:
-            self.queue = mp.Queue()
-        if self.async_validation:
-            consumers, lock = start_validators(
-                self.async_validators,
-                self.queue,
-                logger=self.logger,
-                validation_fn=self.validation_fn,
-                loss_fn=self.val_loss_fn,
-                validation_delay=self.validation_delay,
-                monitor_memory=self.monitor_memory)
+        if self.run_validation:
+            if self.use_queue:
+                self.queue = mp.Queue()
+            if self.async_validation:
+                consumers, lock = start_validators(
+                    self.async_validators,
+                    self.queue,
+                    logger=self.logger,
+                    validation_fn=self.validation_fn,
+                    loss_fn=self.val_loss_fn,
+                    validation_delay=self.validation_delay,
+                    monitor_memory=self.monitor_memory)
 
         # SHUFFLE BATCHES IF REQUIRED
         if shuffle_batches:
@@ -304,15 +305,16 @@ class Experiment:
             **self.time_tracker.get_timeframe('training', format="%Y-%m-%d %H:%M:%S"))
 
         del self.logger
-        if self.async_validation:
-            # Join Validators
-            stop_validators(consumers, self.queue)
-        if self.use_queue:
-            self.queue.close()
-            del self.queue
+        if self.run_validation:
+            if self.async_validation:
+                # Join Validators
+                stop_validators(consumers, self.queue)
+            if self.use_queue:
+                self.queue.close()
+                del self.queue
 
     def validate(self, buffer):
-
+        
         if self.use_queue:
             self.time_tracker.start('mp_put_queue')
             if self.async_disk_queue:
@@ -336,6 +338,7 @@ class Experiment:
                 self.val_loss_fn,
                 self.time_tracker,
                 self.logger)
+            del bffr
     
     @property
     def async_validation(self):

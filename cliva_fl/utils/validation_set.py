@@ -1,3 +1,4 @@
+import torch
 from copy import deepcopy
 
 class ValidationSet():
@@ -21,10 +22,16 @@ class ValidationSet():
         self.target = target.detach().cpu().clone()
     
     def set_model_state(self, model):
-        self.model_state_dict = { k: v.detach().clone().cpu() for k, v in model.state_dict().items() }
+        self.model_state_dict = { k: v.detach().cpu().clone() for k, v in model.state_dict().items() }
     
     def set_optimizer_state(self, optimizer):
-        self.optimizer_state_dict = deepcopy(optimizer.state_dict())
+        cpu_opt = deepcopy(optimizer)
+        for state in cpu_opt.state.values():
+            for k, v in state.items():
+                if isinstance(v, torch.Tensor):
+                    state[k] = v.cpu()
+        self.optimizer_state_dict = deepcopy(cpu_opt.state_dict())
+        del cpu_opt
     
     def set_activations(self, activations):
         self.activations = deepcopy(activations)
