@@ -344,7 +344,7 @@ class Plotter:
                 for exp_path in exp_paths:
                     logger = Logger(base_path=log_dir, exp_name=exp_path.name)
                     mem = logger.load_memory_usage()
-                    yvalue +=  mem[plot['metric']].mean() / 1024 / 1024 / n_exp
+                    yvalue +=  mem[plot['metric']].mean() / 1000 / 1000 / n_exp
                 data[el['label']]['y'].append(yvalue)
                 # sys.exit(0)
 

@@ -1,7 +1,7 @@
 ---
 log_dir: thesis_plots
-plot_dir: evaluation_test
-name: line_quality_test
+plot_dir: evaluation
+name: exp_attack_varying_noise
 title: comparison of validation quality
 xlabel: noise level
 ylabel: f1-score
@@ -18,11 +18,11 @@ data:
   # conf:
   #   color: red
   log_dirs: [
-    exp_attack_freivald_l2_512_sync_cpu_bt64_bf32_q99_noise1e-5,
-    exp_attack_freivald_l2_512_sync_cpu_bt64_bf32_q99_noise1e-4,
-    exp_attack_freivald_l2_512_sync_cpu_bt64_bf32_q99_noise1e-3,
-    exp_attack_freivald_l2_512_sync_cpu_bt64_bf32_q99_noise1e-2,
-    exp_attack_freivald_l2_512_sync_cpu_bt64_bf32_q99_noise1e-1
+    exp_attack_freivald_l2_512_sync_cpu_bt64_bf32_n1_noise1e-5,
+    exp_attack_freivald_l2_512_sync_cpu_bt64_bf32_n1_noise1e-4,
+    exp_attack_freivald_l2_512_sync_cpu_bt64_bf32_n1_noise1e-3,
+    exp_attack_freivald_l2_512_sync_cpu_bt64_bf32_n1_noise1e-2,
+    exp_attack_freivald_l2_512_sync_cpu_bt64_bf32_n1_noise1e-1
   ]
 - label: gvfa
   # conf:

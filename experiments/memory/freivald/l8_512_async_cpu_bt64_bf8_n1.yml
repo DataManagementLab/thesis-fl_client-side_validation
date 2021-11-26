@@ -29,7 +29,7 @@ training:
   n_epochs: 5 # 20
   max_buffer_len: 8
   shuffle_batches: False
-  log_dir: exp_mem_freivald_l2_512_async_cpu_bt64_bf8_n1
+  log_dir: exp_mem_freivald_l8_512_async_cpu_bt64_bf8_n1
   training_method: no_attack
   training_params: {}
   # training_method: targeted_attack

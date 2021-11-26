@@ -20,15 +20,15 @@ data:
     exp_time_freivald_l6_512_sync_cpu_bt64_bf32_n1,
     exp_time_freivald_l8_512_sync_cpu_bt64_bf32_n1
   ]
-# - label: gvfa
+- label: gvfa
   # conf:
-  #   - color: orange
-#   log_dirs: [
-#     exp_time_gvfa_l2_512_sync_cpu_bt64_bf32_n1,
-#     exp_time_gvfa_l4_512_sync_cpu_bt64_bf32_n1,
-#     exp_time_gvfa_l6_512_sync_cpu_bt64_bf32_n1,
-#     exp_time_gvfa_l8_512_sync_cpu_bt64_bf32_n1
-#   ]
+  #   color: orange
+  log_dirs: [
+    exp_time_gvfa_l2_512_sync_cpu_bt64_bf32_n1,
+    exp_time_gvfa_l4_512_sync_cpu_bt64_bf32_n1,
+    exp_time_gvfa_l6_512_sync_cpu_bt64_bf32_n1,
+    exp_time_gvfa_l8_512_sync_cpu_bt64_bf32_n1
+  ]
 - label: submul
   # conf:
   #   color: blue

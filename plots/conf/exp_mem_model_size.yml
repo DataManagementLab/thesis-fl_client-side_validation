@@ -1,0 +1,63 @@
+---
+log_dir: thesis_plots
+plot_dir: evaluation
+name: exp_mem_model_size
+title: comparison of validation memory
+xlabel: number of layers
+ylabel: memory in MB
+ymin: 0
+# ymax: 1
+# grid: True
+# xscale: log
+# xbase: 2
+metric: diff
+# xvalues: [0.1, 0.01, 0.001, 0.0001, 0.00001]
+xvalues: [2, 4, 6, 8]
+# xvalues: [1, 2, 3, 4, 5]
+data:
+- label: freivalds
+  # conf:
+  #   color: red
+  log_dirs: [
+    exp_mem_freivald_l2_512_async_cpu_bt64_bf8_n1,
+    exp_mem_freivald_l4_512_async_cpu_bt64_bf8_n1,
+    exp_mem_freivald_l6_512_async_cpu_bt64_bf8_n1,
+    exp_mem_freivald_l8_512_async_cpu_bt64_bf8_n1
+  ]
+- label: gvfa
+  # conf:
+  #   color: orange
+  log_dirs: [
+    exp_mem_gvfa_l2_512_async_cpu_bt64_bf8_n1,
+    exp_mem_gvfa_l4_512_async_cpu_bt64_bf8_n1,
+    exp_mem_gvfa_l6_512_async_cpu_bt64_bf8_n1,
+    exp_mem_gvfa_l8_512_async_cpu_bt64_bf8_n1
+  ]
+- label: submul
+  # conf:
+  #   color: blue
+  log_dirs: [
+    exp_mem_submul_l2_512_async_cpu_bt64_bf8,
+    exp_mem_submul_l4_512_async_cpu_bt64_bf8,
+    exp_mem_submul_l6_512_async_cpu_bt64_bf8,
+    exp_mem_submul_l8_512_async_cpu_bt64_bf8
+  ]
+- label: matmul
+  # conf:
+  #   color: green
+  log_dirs: [
+    exp_mem_matmul_l2_512_async_cpu_bt64_bf8,
+    exp_mem_matmul_l4_512_async_cpu_bt64_bf8,
+    exp_mem_matmul_l6_512_async_cpu_bt64_bf8,
+    exp_mem_matmul_l8_512_async_cpu_bt64_bf8
+  ]
+- label: retrain
+  # conf:
+  #   color: purple
+  log_dirs: [
+    exp_mem_retrain_l2_512_async_cpu_bt64_bf8,
+    exp_mem_retrain_l4_512_async_cpu_bt64_bf8,
+    exp_mem_retrain_l6_512_async_cpu_bt64_bf8,
+    exp_mem_retrain_l8_512_async_cpu_bt64_bf8
+  ]
+...

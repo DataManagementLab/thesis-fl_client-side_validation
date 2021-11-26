@@ -3,44 +3,45 @@
 N=5
 
 # TIME Experiments
-EXP_TIME_METHOD_SCALABILITY=true
+EXP_TIME_METHOD_SCALABILITY=false
 EXP_TIME_GUARANTEE_SCALABILITY=false
 EXP_TIME_DEVICE_CONCURRENCY=true
 
 # SPACE Experiments
-EXP_MEM_MODEL_SIZE=true
+EXP_MEM_MODEL_SIZE=false
 
 # QUALITY Experiments
 EXP_ATTACK_VARYING_NOISE=false
+EXP_TIME_ATTACK_VARYING_GUARANTEE=true
 
 
 if $EXP_TIME_METHOD_SCALABILITY; then
 echo "===== EXP_TIME_METHOD_SCALABILITY ====="
 dirs=(
-# experiments/time/freivald/l2_512_sync_cpu_bt64_bf32_n1.yml
-# experiments/time/freivald/l4_512_sync_cpu_bt64_bf32_n1.yml
-# experiments/time/freivald/l6_512_sync_cpu_bt64_bf32_n1.yml
-# experiments/time/freivald/l8_512_sync_cpu_bt64_bf32_n1.yml
+experiments/time/freivald/l2_512_sync_cpu_bt64_bf32_n1.yml
+experiments/time/freivald/l4_512_sync_cpu_bt64_bf32_n1.yml
+experiments/time/freivald/l6_512_sync_cpu_bt64_bf32_n1.yml
+experiments/time/freivald/l8_512_sync_cpu_bt64_bf32_n1.yml
 
 experiments/time/gvfa/l2_512_sync_cpu_bt64_bf32_n1.yml
 experiments/time/gvfa/l4_512_sync_cpu_bt64_bf32_n1.yml
 experiments/time/gvfa/l6_512_sync_cpu_bt64_bf32_n1.yml
 experiments/time/gvfa/l8_512_sync_cpu_bt64_bf32_n1.yml
 
-# experiments/time/matmul/l2_512_sync_cpu_bt64_bf32_n1.yml
-# experiments/time/matmul/l4_512_sync_cpu_bt64_bf32_n1.yml
-# experiments/time/matmul/l6_512_sync_cpu_bt64_bf32_n1.yml
-# experiments/time/matmul/l8_512_sync_cpu_bt64_bf32_n1.yml
+experiments/time/matmul/l2_512_sync_cpu_bt64_bf32_n1.yml
+experiments/time/matmul/l4_512_sync_cpu_bt64_bf32_n1.yml
+experiments/time/matmul/l6_512_sync_cpu_bt64_bf32_n1.yml
+experiments/time/matmul/l8_512_sync_cpu_bt64_bf32_n1.yml
 
 experiments/time/retrain/l2_512_sync_cpu_bt64_bf32_n1.yml
-# experiments/time/retrain/l4_512_sync_cpu_bt64_bf32_n1.yml
-# experiments/time/retrain/l6_512_sync_cpu_bt64_bf32_n1.yml
-# experiments/time/retrain/l8_512_sync_cpu_bt64_bf32_n1.yml
+experiments/time/retrain/l4_512_sync_cpu_bt64_bf32_n1.yml
+experiments/time/retrain/l6_512_sync_cpu_bt64_bf32_n1.yml
+experiments/time/retrain/l8_512_sync_cpu_bt64_bf32_n1.yml
 
-# experiments/time/submul/l2_512_sync_cpu_bt64_bf32_n1.yml
-# experiments/time/submul/l4_512_sync_cpu_bt64_bf32_n1.yml
-# experiments/time/submul/l6_512_sync_cpu_bt64_bf32_n1.yml
-# experiments/time/submul/l8_512_sync_cpu_bt64_bf32_n1.yml
+experiments/time/submul/l2_512_sync_cpu_bt64_bf32_n1.yml
+experiments/time/submul/l4_512_sync_cpu_bt64_bf32_n1.yml
+experiments/time/submul/l6_512_sync_cpu_bt64_bf32_n1.yml
+experiments/time/submul/l8_512_sync_cpu_bt64_bf32_n1.yml
 )
 for dir in "${dirs[@]}"; do python run_exp.py -r $N -c "$dir"; done
 fi
@@ -59,10 +60,10 @@ fi
 if $EXP_TIME_DEVICE_CONCURRENCY; then
 echo "===== EXP_TIME_DEVICE_CONCURRENCY ====="
 dirs=(
-experiments/time/gvfa/l2_512_async_cpu_bt64_bf32_n1.yml
-experiments/time/gvfa/l2_512_async_gpu_bt64_bf32_n1.yml
-# experiments/time/gvfa/l2_512_sync_cpu_bt64_bf32_n1.yml # Available from other Benchmark
-experiments/time/gvfa/l2_512_sync_gpu_bt64_bf32_n1.yml
+experiments/time/gvfa/l2_512_sync_gpu_bt64_bf32_n1_queue.yml
+experiments/time/gvfa/l2_512_sync_cpu_bt64_bf32_n1_queue.yml
+# experiments/time/gvfa/l2_512_async_gpu_bt64_bf32_n1.yml
+# experiments/time/gvfa/l2_512_async_cpu_bt64_bf32_n1.yml
 )
 for dir in "${dirs[@]}"; do python run_exp.py -r $N -c "$dir"; done
 fi
@@ -118,6 +119,24 @@ experiments/attack/submul/l2_512_sync_cpu_bt64_bf32_s50_noise1e-2.yml
 experiments/attack/submul/l2_512_sync_cpu_bt64_bf32_s50_noise1e-3.yml
 experiments/attack/submul/l2_512_sync_cpu_bt64_bf32_s50_noise1e-4.yml
 experiments/attack/submul/l2_512_sync_cpu_bt64_bf32_s50_noise1e-5.yml
+)
+for dir in "${dirs[@]}"; do python run_exp.py -r $N -c "$dir"; done
+fi
+
+if $EXP_TIME_ATTACK_VARYING_GUARANTEE; then
+echo "===== EXP_TIME_ATTACK_VARYING_GUARANTEE ====="
+dirs=(
+experiments/time_attack/freivald/l2_512_sync_cpu_bt64_bf32_q25_noise5e-4.yml
+experiments/time_attack/freivald/l2_512_sync_cpu_bt64_bf32_q50_noise5e-4.yml
+experiments/time_attack/freivald/l2_512_sync_cpu_bt64_bf32_q75_noise5e-4.yml
+experiments/time_attack/freivald/l2_512_sync_cpu_bt64_bf32_q90_noise5e-4.yml
+experiments/time_attack/freivald/l2_512_sync_cpu_bt64_bf32_q99_noise5e-4.yml
+
+experiments/time_attack/submul/l2_512_sync_cpu_bt64_bf32_q25_noise5e-4.yml
+experiments/time_attack/submul/l2_512_sync_cpu_bt64_bf32_q50_noise5e-4.yml
+experiments/time_attack/submul/l2_512_sync_cpu_bt64_bf32_q75_noise5e-4.yml
+experiments/time_attack/submul/l2_512_sync_cpu_bt64_bf32_q90_noise5e-4.yml
+experiments/time_attack/submul/l2_512_sync_cpu_bt64_bf32_q99_noise5e-4.yml
 )
 for dir in "${dirs[@]}"; do python run_exp.py -r $N -c "$dir"; done
 fi
