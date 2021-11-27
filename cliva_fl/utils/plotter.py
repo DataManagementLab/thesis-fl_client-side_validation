@@ -220,7 +220,7 @@ class Plotter:
         for el in plot['data']:
             exp_paths = list(Path(el['log_dir']).glob('experiment_*'))
             n_exp = len(exp_paths)
-            timeframes_dict[el['label']] = dict()
+            timeframes_dict[el['label']] = dict(conf=el['conf'] if 'conf' in el else dict())
             for exp_path in exp_paths:
                 logger = Logger(base_path=el['log_dir'], exp_name=exp_path.name)
                 timeframes = logger.load_timeframes()
@@ -270,10 +270,13 @@ class Plotter:
             plt_synchronic = plt_training and not plt_validation
             d = bar_width/2 if plt_training and plt_validation else 0
             x += bar_space + bar_width/2 + d
+            conf = v['conf']
             ticks_loc.append(x)
             ticks_lab.append(k)
             if plt_synchronic:
-                ax.barh(x+d, v['training_to'], left=v['training_from'], height=bar_width, color=color_synct, align='center', label=label_synct)
+                colr = conf['color'] if 'color' in conf else color_synct
+                labl = conf['type'] if 'type' in conf else label_synct
+                ax.barh(x+d, v['training_to'], left=v['training_from'], height=bar_width, color=colr, align='center', label=labl)
                 if first_synct:
                     label_synct = None
                     first_synct = False
