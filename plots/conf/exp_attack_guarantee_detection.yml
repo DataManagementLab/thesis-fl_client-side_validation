@@ -1,7 +1,7 @@
 ---
 log_dir: thesis_plots
 plot_dir: evaluation
-name: exp_attack_guarantee_detection
+name: exp_attack_guarantee_detection_p1
 title: F1-score / Correctness Guarantee
 xlabel: guarantee in %
 ylabel: f1-score
@@ -16,11 +16,11 @@ data:
   # conf:
   #   color: red
   log_dirs: [
-    exp_time_attack_freivald_l2_512_sync_cpu_bt64_bf32_q25_noise5e-4,
-    exp_time_attack_freivald_l2_512_sync_cpu_bt64_bf32_q50_noise5e-4,
-    exp_time_attack_freivald_l2_512_sync_cpu_bt64_bf32_q75_noise5e-4,
-    exp_time_attack_freivald_l2_512_sync_cpu_bt64_bf32_q90_noise5e-4,
-    exp_time_attack_freivald_l2_512_sync_cpu_bt64_bf32_q99_noise5e-4
+    exp_time_attack_freivald_l2_512_sync_cpu_bt64_bf32_q25_p1_noise5e-4,
+    exp_time_attack_freivald_l2_512_sync_cpu_bt64_bf32_q50_p1_noise5e-4,
+    exp_time_attack_freivald_l2_512_sync_cpu_bt64_bf32_q75_p1_noise5e-4,
+    exp_time_attack_freivald_l2_512_sync_cpu_bt64_bf32_q90_p1_noise5e-4,
+    exp_time_attack_freivald_l2_512_sync_cpu_bt64_bf32_q99_p1_noise5e-4
   ]
 # - label: gvfa
   # conf:
@@ -35,11 +35,11 @@ data:
   # conf:
   #   color: blue
   log_dirs: [
-    exp_time_attack_submul_l2_512_sync_cpu_bt64_bf32_q25_noise5e-4,
-    exp_time_attack_submul_l2_512_sync_cpu_bt64_bf32_q50_noise5e-4,
-    exp_time_attack_submul_l2_512_sync_cpu_bt64_bf32_q75_noise5e-4,
-    exp_time_attack_submul_l2_512_sync_cpu_bt64_bf32_q90_noise5e-4,
-    exp_time_attack_submul_l2_512_sync_cpu_bt64_bf32_q99_noise5e-4
+    exp_time_attack_submul_l2_512_sync_cpu_bt64_bf32_q25_p1_noise5e-4,
+    exp_time_attack_submul_l2_512_sync_cpu_bt64_bf32_q50_p1_noise5e-4,
+    exp_time_attack_submul_l2_512_sync_cpu_bt64_bf32_q75_p1_noise5e-4,
+    exp_time_attack_submul_l2_512_sync_cpu_bt64_bf32_q90_p1_noise5e-4,
+    exp_time_attack_submul_l2_512_sync_cpu_bt64_bf32_q99_p1_noise5e-4
   ]
 # - label: matmul
 #   # conf:

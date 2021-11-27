@@ -1,0 +1,114 @@
+---
+log_dir: thesis_plots
+plot_dir: evaluation
+name: exp_time_gvfa_train_validate
+title: Training and Validation Time / Model Size (GVFA)
+# xlabel: epochs
+ylabel: time / epoch (sec)
+# ymin: 0
+# ymax: 1
+# grid: True
+metrics:
+# - raw_time_training
+# - raw_time_validation
+- total_time_training
+- total_time_validation
+# - validate_activations
+# - validate_gradients
+# - validate_loss
+# - validate_weights
+# - validate_weights_getattr
+# - validate_weights_allclose
+# - validate_weights_optimizer
+# - validate_retrain
+# - mp_call_validation
+# - mp_fill_buffer
+# - mp_put_queue
+# - mp_initialization
+# - mp_get_queue
+# - mp_validate_buffer
+data:
+- log_dir: exp_time_gvfa_l2_512_sync_cpu_bt64_bf32_n1
+  label: 2 layers
+- log_dir: exp_time_gvfa_l4_512_sync_cpu_bt64_bf32_n1
+  label: 4 layers
+- log_dir: exp_time_gvfa_l6_512_sync_cpu_bt64_bf32_n1
+  label: 6 layers
+- log_dir: exp_time_gvfa_l8_512_sync_cpu_bt64_bf32_n1
+  label: 8 layers
+  
+
+
+
+# - log_dir: times_freivalds_async_cpu
+#   label: as cpu
+# - log_dir: times_freivalds_async_cpu_disk
+#   label: as cpu disk
+# - log_dir: times_freivalds_async_gpu
+#   label: as gpu
+# - log_dir: times_freivalds_sync_cpu
+#   label: sy cpu
+# - log_dir: times_freivalds_sync_gpu
+#   label: sy gpu
+
+# - log_dir: times_freivalds_async_gpu_allclose
+#   label: as-gpu-ac
+# - log_dir: times_freivalds_async_gpu_custom
+#   label: as-gpu-cu
+# - log_dir: times_freivalds_sync_cpu_allclose
+#   label: s-cpu-ac
+# - log_dir: times_freivalds_sync_cpu_custom
+#   label: s-cpu-cu
+# - log_dir: times_freivalds_sync_gpu_allclose
+#   label: s-gpu-ac
+# - log_dir: times_freivalds_sync_gpu_custom
+#   label: s-gpu-cu
+
+# - log_dir: times_sync_cpu
+#   label: sync cpu
+# - log_dir: times_sync_gpu
+#   label: sync gpu 
+# - log_dir: times_test_tt01
+#   label: sequential 9x
+# - log_dir: times_test_tt03
+#   label: sequential 1x
+
+# - log_dir: times_test_submul_1
+#   label: submul_1
+# - log_dir: times_test_submul_2
+#   label: submul_2
+# - log_dir: times_test_freivalds_1
+#   label: freivalds 9x
+# - log_dir: times_test_freivalds_2
+#   label: freivalds 9x optimized
+# - log_dir: times_test_freivalds_0
+#   label: freivalds 0x
+# - log_dir: times_retrain_allclose
+#   label: retrain
+# - log_dir: times_freivald_allclose
+#   label: freivalds 1x
+# - log_dir: times_matmul_allclose
+#   label: matmul 1x
+# - log_dir: times_freivald_wval
+#   label: freivald wval
+# - log_dir: times_matmul_prob
+#   label: matmul prob 0.6
+# - log_dir: times_submul
+#   label: submul 0.5
+# - log_dir: times_submul_2
+#   label: submul 2
+# - log_dir: times_submul_2_1
+#   label: submul 2_1
+# - log_dir: times_submul_2_2
+#   label: submul 2_2
+# - log_dir: times_submul_2_3
+#   label: submul 2_3
+# - log_dir: times_submul_2_rand
+#   label: submul 2 rand
+# - log_dir: times_submul_2_rand2
+#   label: submul 2 rand2
+# - log_dir: times_matmul_noval
+#   label: matmul noval
+# - log_dir: times_gvfa_allclose
+#   label: gvfa
+...
