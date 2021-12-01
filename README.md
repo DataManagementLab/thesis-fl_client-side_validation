@@ -22,7 +22,7 @@ You can install the clivaFL module with pip
 
 # Run Small Experiments
 
-Set the settings in `experiments.yml` and run the experiment with 
+Set the settings in `experiment.yml` and run the experiment with 
 
     python run_exp.py
 
