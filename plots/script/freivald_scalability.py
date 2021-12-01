@@ -11,7 +11,7 @@ y = list(map(lambda x: freivalds_rounds(x, 0.99), x))
 ax.plot(x, y)
 ax.set_title("99% correctness guarantee with Freivalds' Algorithm")
 ax.set_xlabel('number of layers')
-ax.set_ylabel('number freivald rounds')
+ax.set_ylabel('number of freivald iterations')
 
 fig.savefig(plot_path)
 plt.close(fig)

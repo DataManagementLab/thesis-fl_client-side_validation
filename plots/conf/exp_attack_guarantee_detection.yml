@@ -2,7 +2,7 @@
 log_dir: thesis_plots
 plot_dir: evaluation
 name: exp_attack_guarantee_detection_p1
-title: F1-score / Correctness Guarantee
+title: Recall / Correctness Guarantee
 xlabel: guarantee in %
 ylabel: f1-score
 ymin: 0
