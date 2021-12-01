@@ -18,6 +18,5 @@ def untargeted_attack(model, optimizer, loss_fn, data, target, epoch, batch, dev
                 noise = gradient_noise(weight.shape, scale=scale, device=device) if random_noise else torch.full(weight.shape, scale)
             weight.grad += noise
             logger.log_attack_application(epoch, batch, l, "GRADIENT")
-            # print(f'\tWeight: {l}')
     optimizer.step()
     return loss

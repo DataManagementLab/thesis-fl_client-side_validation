@@ -8,6 +8,7 @@ from typing import List, Optional
 import sys, yaml, time
 from yaml import Loader
 import pandas as pd
+import numpy as np
 
 import torch
 import torch.nn as nn
@@ -138,7 +139,7 @@ class Plotter:
         ax.set_xlim(plot.get('xmin'), plot.get('xmax'))
         ax.set_ylim(plot.get('ymin'), plot.get('ymax'))
         plot_path.parent.mkdir(parents=True, exist_ok=True)
-        fig.savefig(plot_path)
+        fig.savefig(plot_path, bbox_inches = "tight")
         plt.close(fig)
     
     @classmethod
@@ -170,11 +171,11 @@ class Plotter:
         ax.set_xlim(plot.get('xmin'), plot.get('xmax'))
         ax.set_ylim(plot.get('ymin'), plot.get('ymax'))
         plot_path.parent.mkdir(parents=True, exist_ok=True)
-        fig.savefig(plot_path)
+        fig.savefig(plot_path, bbox_inches = "tight")
         plt.close(fig)
     
     @classmethod
-    def plot_times(cls, plot_cnf: Path) -> None:
+    def plot_times(cls, plot_cnf: Path, trim_label=False) -> None:
         plot = cls.load_plot_config(plot_cnf)
         plot_path = Path(plot.get('log_dir')) / plot.get('plot_dir') / f"{plot.get('name')}.png"
         fig, ax = plt.subplots()
@@ -195,7 +196,11 @@ class Plotter:
 
         y_bottom = [0] * len(plot['data'])
         for metric, data in stats_sum.items():
-            ax.bar(data.keys(), data.values(), label=metric, bottom=y_bottom)
+            if trim_label:
+                labl = metric.split('_')[-1].title()
+            else:
+                labl = metric
+            ax.bar(data.keys(), data.values(), label=labl, bottom=y_bottom)
             y_bottom = [ a+b for a, b in zip(y_bottom, data.values())]
 
         ax.legend()
@@ -206,7 +211,7 @@ class Plotter:
         ax.set_ylim(plot.get('ymin'), plot.get('ymax'))
         ax.set_title(plot.get('title'))
         plot_path.parent.mkdir(parents=True, exist_ok=True)
-        fig.savefig(plot_path)
+        fig.savefig(plot_path, bbox_inches = "tight")
         plt.close(fig)
     
     @classmethod
@@ -255,14 +260,12 @@ class Plotter:
         label_synct = plot.get('label_synct', 'train & valid')
         color_train = plot.get('color_train', 'lightsteelblue')
         color_valid = plot.get('color_valid', 'salmon')
-        color_synct = plot.get('colog_synct', 'peachpuff')
+        color_synct = plot.get('color_synct', 'peachpuff')
 
         x = 0
         ticks_loc = []
         ticks_lab = []
-        first_train = True
-        first_valid = True
-        first_synct = True
+        seen_labels = list()
 
         for i, (k, v) in enumerate(timeframes_dict.items()):
             plt_training = 'training_from' in v and 'training_to' in v
@@ -276,20 +279,21 @@ class Plotter:
             if plt_synchronic:
                 colr = conf['color'] if 'color' in conf else color_synct
                 labl = conf['type'] if 'type' in conf else label_synct
+                if labl in seen_labels: labl = None
+                else: seen_labels.append(labl)
                 ax.barh(x+d, v['training_to'], left=v['training_from'], height=bar_width, color=colr, align='center', label=labl)
-                if first_synct:
-                    label_synct = None
-                    first_synct = False
             elif plt_training:
-                ax.barh(x+d, v['training_to'], left=v['training_from'], height=bar_width, color=color_train, align='center', label=label_train)
-                if first_train:
-                    label_train = None
-                    first_train = False
+                colr = conf['t_color'] if 't_color' in conf else color_train
+                labl = conf['t_type'] if 't_type' in conf else label_train
+                if labl in seen_labels: labl = None
+                else: seen_labels.append(labl)
+                ax.barh(x+d, v['training_to'], left=v['training_from'], height=bar_width, color=color_train, align='center', label=labl)
             if plt_validation:
-                ax.barh(x-d, v['validation_to'], left=v['validation_from'], height=bar_width, color=color_valid, align='center', label=label_valid)
-                if first_valid:
-                    label_valid = None
-                    first_valid = False
+                colr = conf['v_color'] if 'v_color' in conf else color_valid
+                labl = conf['v_type'] if 'v_type' in conf else label_valid
+                if labl in seen_labels: labl = None
+                else: seen_labels.append(labl)
+                ax.barh(x-d, v['validation_to'], left=v['validation_from'], height=bar_width, color=color_valid, align='center', label=labl)
             x += bar_width/2 + d
         
         ax.set_yticks(ticks_loc)
@@ -303,7 +307,7 @@ class Plotter:
         ax.set_ylim(plot.get('ymin'), plot.get('ymax'))
         ax.set_title(plot.get('title'))
         plot_path.parent.mkdir(parents=True, exist_ok=True)
-        fig.savefig(plot_path)
+        fig.savefig(plot_path, bbox_inches = "tight")
         plt.close(fig)
     
     @classmethod
@@ -352,7 +356,6 @@ class Plotter:
                 # sys.exit(0)
 
         # CREATE PLOT
-        for k, v in data.items(): print(k,v)
         cls.plot_linechart(data, plot, plot_path)
     
     @classmethod
@@ -393,7 +396,6 @@ class Plotter:
                 # sys.exit(0)
 
         # CREATE PLOT
-        for k, v in data.items(): print(k,v)
         cls.plot_linechart(data, plot, plot_path)
     
     @staticmethod
@@ -413,7 +415,7 @@ class Plotter:
 
         # FILL PLOT
         for method, d in data.items():
-            ax.plot(d['x'], d['y'], label=method, **d['conf'])
+            ax.bar(d['x'], d['y'], label=method, **d['conf'])
 
         # FINISH PLOT
         ax.legend()
@@ -428,7 +430,54 @@ class Plotter:
         if 'xscale' in plot: ax.set_xscale(plot['xscale'], base=plot.get('xbase', 10))
         ax.set_title(plot.get('title'))
         plot_path.parent.mkdir(parents=True, exist_ok=True)
-        fig.savefig(plot_path)
+        fig.savefig(plot_path, bbox_inches = "tight")
+        plt.close(fig)
+    
+    @staticmethod
+    def plot_barchart(data, plot, plot_path: Path, width = 0.35):
+        """
+        data = dict(
+            method1=dict(
+                x=list(),
+                y=list(),
+                conf=dict()
+            )
+        ),
+        plot = dict()
+        """
+        # CREATE PLOT
+        fig, ax = plt.subplots()
+
+        n = len(data)
+        diff = np.arange(-(n/2-0.5)*width, n*width/2, width)
+        if 'xticks' in plot:
+            print(plot['xticks'])
+            ax.set_xticks(np.arange(len(plot['xticks'])))
+            ax.set_xticklabels(plot['xticks'])
+        else:
+            xticks = list(data.values())[0]['x']
+            ax.set_xticks(np.arange(len(xticks)))
+            ax.set_xticklabels(xticks)
+
+        # FILL PLOT
+        for s, (method, d) in zip(diff, data.items()):
+            x = np.arange(s, s+len(d['x']))  # the label locations
+            ax.bar(x, d['y'], width, label=method, **d['conf'])
+
+        # FINISH PLOT
+        ax.legend(loc=4)
+        if plot.get('grid') == True: ax.grid()
+        ax.set_xlabel(plot.get('xlabel'))
+        ax.set_ylabel(plot.get('ylabel'))
+        if 'xmin' in plot: ax.set_xlim(xmin=plot['xmin'])
+        if 'xmax' in plot: ax.set_xlim(xmax=plot['xmax'])
+        if 'ymin' in plot: ax.set_ylim(ymin=plot['ymin'])
+        if 'ymax' in plot: ax.set_ylim(ymax=plot['ymax'])
+        if 'yscale' in plot: ax.set_yscale(plot['yscale'], base=plot.get('ybase', 10))
+        if 'xscale' in plot: ax.set_xscale(plot['xscale'], base=plot.get('xbase', 10))
+        ax.set_title(plot.get('title'))
+        plot_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(plot_path, bbox_inches = "tight")
         plt.close(fig)
 
     

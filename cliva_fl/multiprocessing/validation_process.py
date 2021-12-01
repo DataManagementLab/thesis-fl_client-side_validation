@@ -38,8 +38,6 @@ def validation_process(queue, logger: Logger, monitor_memory=False, **validation
             time_tracker.start('mp_read_buffer')
             buffer = logger.get_queue(buffer)
             time_tracker.stop('mp_read_buffer')
-        
-        # log.info('{} got {} of epoch {}'.format(os.getpid(), buffer.size(), buffer.epoch))
 
         time_tracker.start('mp_validate_buffer')
         validate_buffer(buffer, logger=logger, time_tracker=time_tracker, model=model, optimizer=optimizer, **validation_kwargs)
@@ -93,18 +91,3 @@ class MemThread(Thread):
             if mem < self._mem_base:
                 self._mem_base = mem
             time.sleep(0.001)
-
-def consumer_process(queue, logger, **validation_kwarg):
-    log = get_process_logger()
-    log.info('Starting consumer => {}'.format(os.getpid()))
-
-    while True:
-        time.sleep(random.randint(0, 2))
-
-        buffer = queue.get()
-
-        if buffer is None:
-            log.info('Consumer {} exiting...'.format(os.getpid()))
-            return
-        
-        log.info('{} got {}'.format(os.getpid(), 'buffer'))

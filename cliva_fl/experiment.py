@@ -1,22 +1,3 @@
-# PREVIOUS IMPORTS
-# import sys, time, os, random, gc, logging
-# from logging import basicConfig, debug, info, warning, error
-# import numpy as np
-# from pathlib import Path
-# import torch, json
-# import torch.nn as nn
-# import torch.nn.functional as F
-# import torch.optim as optim
-# from torchvision import datasets, transforms
-# from copy import deepcopy
-# import math
-
-# PROFILER
-import cProfile
-from copy import deepcopy
-import torch.multiprocessing as multiprocessing
-from numpy import real
-
 # LIB IMPORTS
 import torch, numpy
 import torch.nn as nn
@@ -30,7 +11,6 @@ from pathlib import Path
 
 # INIT LOGGER
 import logging as log
-
 from cliva_fl.utils.validation_buffer import ValidationBuffer
 
 log.basicConfig(
@@ -40,7 +20,7 @@ log.basicConfig(
 
 # MODULE IMPORTS
 from cliva_fl import training, validation, datasets, models
-from cliva_fl.utils import ValidationSet, Logger, TimeTracker, logger, register_activation_hooks, register_gradient_hooks, partial_class, load_config, time_tracker, freivalds_rounds, submul_ratio
+from cliva_fl.utils import ValidationSet, Logger, TimeTracker, register_activation_hooks, register_gradient_hooks, partial_class, load_config, freivalds_rounds, submul_ratio
 from cliva_fl.multiprocessing import start_validators, stop_validators
 
 class Experiment:
@@ -231,27 +211,10 @@ class Experiment:
                 self.time_tracker.stop('raw_time_training')
 
                 # GET GRADIENTS
-                # self.time_tracker.start('raw_time_extract_gradients')
                 name = list(activations.keys())[0]
                 gradients[name].append(None)
                 gradients[name].append(self.model.layers[0].weight.grad.detach().cpu())
                 gradients[name].append(self.model.layers[0].bias.grad.detach().cpu())
-
-                # module_types = [nn.Linear, nn.Conv2d]
-                # for name, module in self.model.named_modules():
-                #     if type(module) in module_types:
-                #         if not gradients[name]: 
-                #             gradients[name].append(None)
-                #             gradients[name].append(module.weight.grad.detach().cpu())
-                #             gradients[name].append(module.bias.grad.detach().cpu())
-                #             break
-                # self.time_tracker.stop('raw_time_extract_gradients')
-
-                # for key in activations.keys():
-                #     l =  getattr(self.model, key)
-                #     if len(gradients[key]) == 0: gradients[key].append(None)
-                #     gradients[key].append(l.weight.grad.detach().clone().cpu())
-                #     gradients[key].append(l.bias.grad.detach().clone().cpu())
 
                 # SAVE TO BUFFER
                 vset.set_loss(loss)
@@ -314,7 +277,6 @@ class Experiment:
                 del self.queue
 
     def validate(self, buffer):
-        
         if self.use_queue:
             self.time_tracker.start('mp_put_queue')
             if self.async_disk_queue:

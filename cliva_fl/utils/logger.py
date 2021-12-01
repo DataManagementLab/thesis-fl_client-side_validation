@@ -219,14 +219,14 @@ class Logger:
         self._rm_file(path)
         return obj
     
-    def print_attack_detection(self):
+    def print_attack_detection(self, only_total=False):
         total_TP = total_FP = total_FN = 0
         for epoch in range(1, self.num_epochs):
             TP, FP, FN = self.check_attack_detection(epoch)
             total_TP += TP
             total_FP += FP
             total_FN += FN
-            print(f'epoch {epoch:03}\tDetected: {TP}/{TP+FN}\t\tTP {TP}\t\tFP {FP}\t\tFN {FN}')
+            if not only_total: print(f'epoch {epoch:03}\tDetected: {TP}/{TP+FN}\t\tTP {TP}\t\tFP {FP}\t\tFN {FN}')
         print(f'TOTAL\t\tDetected: {total_TP}/{total_TP+total_FN}\t\tTP {total_TP}\tFP {total_FP}\t\tFN {total_FN}')
     
     def check_attack_detection(self, epoch, get_data=False):

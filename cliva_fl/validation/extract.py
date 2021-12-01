@@ -1,14 +1,12 @@
-import torch, sys, time
+import torch
 from torch import nn
 import torch.nn.functional as F
 
-from cliva_fl.utils import TimeTracker, Logger, ValidationSet, vc, tensors_close, tensors_close_sum, rand_true
+from cliva_fl.utils import TimeTracker, Logger, ValidationSet, vc, tensors_close, rand_true
 
 def validate_extract(validation_method, validation_set: ValidationSet, model, optimizer, loss_fn, next_model, time_tracker: TimeTracker, logger: Logger, val_prob=None, verbose=False, silent=False, rtol=1e-5, atol=1e-4, index=None, **method_args):
 
     data, target, activations, gradients, loss = validation_set.get_dict().values()
-
-    # print('atol:', atol, 'rtol:', rtol)
 
     optimizer.zero_grad()
 
@@ -86,10 +84,6 @@ def validate_extract(validation_method, validation_set: ValidationSet, model, op
                 grad_W_valid = validation_method(C_a.T, I, grad_W, rtol=rtol, atol=atol, **method_args)
                 grad_b_valid = tensors_close(torch.sum(C_a, dim=0), grad_b, rtol=rtol, atol=atol)
 
-                # if not grad_x_valid: print(f'Detected Epoch: {validation_set.epoch}, Batch: {validation_set.batch}, Weight: {key}.input')
-                # if not grad_W_valid: print(f'Detected Epoch: {validation_set.epoch}, Batch: {validation_set.batch}, Weight: {key}.weight')
-                # if not grad_b_valid: print(f'Detected Epoch: {validation_set.epoch}, Batch: {validation_set.batch}, Weight: {key}.bias')
-
                 if not grad_x_valid: 
                     logger.log_attack_detection(
                         validation_set.epoch, 
@@ -144,12 +138,9 @@ def validate_extract(validation_method, validation_set: ValidationSet, model, op
                 next_module = next_model.layers[i]
                 time_tracker.stop('validate_weights_getattr')
                 time_tracker.start('validate_weights_allclose')
-                # W_valid = torch.allclose(new_layer.weight, next_layer.weight)
-                # b_valid = torch.allclose(new_layer.bias, next_layer.bias)
                 W_valid = tensors_close(module.weight, next_module.weight, rtol=rtol, atol=atol)
                 b_valid = tensors_close(module.bias, next_module.bias, rtol=rtol, atol=atol)
                 time_tracker.stop('validate_weights_allclose')
-                # print(time_tracker.last('validate_weights_allclose'))
 
                 if not W_valid: 
                     logger.log_attack_detection(
@@ -175,4 +166,3 @@ def validate_extract(validation_method, validation_set: ValidationSet, model, op
         print(f'batch {index:04d}', end=' ')
         print(f'act: {vc(act_total)}; loss: {vc(loss_valid)}; grad: {vc(grad_total)}; weight: {vc(weight_total)}')
     
-    # sys.exit(0)

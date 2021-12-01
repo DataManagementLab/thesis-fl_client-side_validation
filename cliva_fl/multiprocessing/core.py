@@ -1,11 +1,10 @@
 from cliva_fl.utils import Logger
-from torch.multiprocessing import Process, Queue, Lock, set_start_method, get_sharing_strategy, set_sharing_strategy, Pipe
+from torch.multiprocessing import Process, Queue, Lock, set_start_method, set_sharing_strategy
 try: set_start_method('spawn')
 except RuntimeError: pass
 try: set_sharing_strategy('file_system')
 except RuntimeError: pass
-from .validation_process import validation_process, consumer_process
-from .process_logger import get_process_logger
+from .validation_process import validation_process
 
 def start_validators(num, queue: Queue, logger: Logger, **kwargs):
     lock = Lock()
