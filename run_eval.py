@@ -1,4 +1,4 @@
-import sys, argparse
+import argparse
 from cliva_fl.utils import Logger, Plotter
 from pathlib import Path
 from datetime import datetime
@@ -15,8 +15,6 @@ parser.add_argument('--xmin', type=float, default=None, required=False, help='Mi
 parser.add_argument('--xmax', type=float, default=None, required=False, help='Maximum value of x-axes in plot.')
 parser.add_argument('--ymin', type=float, default=None, required=False, help='Minimum value of y-axes in plot.')
 parser.add_argument('--ymax', type=float, default=None, required=False, help='Maximum value of y-axes in plot.')
-
-# parser.add_argument('-p', '--plot_type', type=str, default=None, required=False, help='Plot type for the plot.')
 
 args = parser.parse_args()
 

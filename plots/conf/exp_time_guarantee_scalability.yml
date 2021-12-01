@@ -11,7 +11,7 @@ ylabel: validation time / epoch (sec)
 metric: total_time_validation
 xvalues: [2, 4, 6, 8]
 data:
-- label: freivalds
+- label: Freivalds' Algorithm
   # conf:
   #   color: red
   log_dirs: [

@@ -4,7 +4,7 @@ plot_dir: evaluation
 name: exp_mem_model_size
 title: Memory Usage / Model Size for Validation
 xlabel: number of layers
-ylabel: memory in MB
+ylabel: memory (diff) in MB
 ymin: 0
 # ymax: 1
 # grid: True
@@ -15,7 +15,7 @@ metric: diff
 xvalues: [2, 4, 6, 8]
 # xvalues: [1, 2, 3, 4, 5]
 data:
-- label: freivalds
+- label: Freivalds' Algorithm
   # conf:
   #   color: red
   log_dirs: [
@@ -24,7 +24,7 @@ data:
     exp_mem_freivald_l6_512_async_cpu_bt64_bf8_n1,
     exp_mem_freivald_l8_512_async_cpu_bt64_bf8_n1
   ]
-- label: gvfa
+- label: GVFA
   # conf:
   #   color: orange
   log_dirs: [
@@ -33,7 +33,7 @@ data:
     exp_mem_gvfa_l6_512_async_cpu_bt64_bf8_n1,
     exp_mem_gvfa_l8_512_async_cpu_bt64_bf8_n1
   ]
-- label: submul
+- label: SubMul
   # conf:
   #   color: blue
   log_dirs: [
@@ -42,7 +42,7 @@ data:
     exp_mem_submul_l6_512_async_cpu_bt64_bf8,
     exp_mem_submul_l8_512_async_cpu_bt64_bf8
   ]
-- label: matmul
+- label: MatMul
   # conf:
   #   color: green
   log_dirs: [
@@ -51,7 +51,7 @@ data:
     exp_mem_matmul_l6_512_async_cpu_bt64_bf8,
     exp_mem_matmul_l8_512_async_cpu_bt64_bf8
   ]
-- label: retrain
+- label: Retrain
   # conf:
   #   color: purple
   log_dirs: [

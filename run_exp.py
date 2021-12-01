@@ -1,16 +1,5 @@
 #!/usr/bin/env python3
 
-""" TODO
-[X] Validate next Weights
-[ ] More granular validation (manual linear forward pass)
-[ ] Save and validate bias gradients
-[ ] Show if we can detect attacks
-
-Performance Parameters:
-- Model Size
-- Batch Size
-"""
-
 import yaml, argparse
 import logging as log
 from pathlib import Path

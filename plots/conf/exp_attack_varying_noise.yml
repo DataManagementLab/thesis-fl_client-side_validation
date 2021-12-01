@@ -2,19 +2,19 @@
 log_dir: thesis_plots
 plot_dir: evaluation
 name: exp_attack_varying_noise_p1
-title: Error Detection Quality / Noise Level
+title: Single-round Error for Validation Methods
 xlabel: size of noise
-ylabel: f1-score
+ylabel: recall #f1-score
 ymin: 0
 # ymax: 1
 # grid: True
 xscale: log
-metric: f1_score
+metric: recall #f1_score
 # xvalues: [0.1, 0.01, 0.001, 0.0001, 0.00001]
 xvalues: [0.00001, 0.0001, 0.001, 0.01, 0.1]
 # xvalues: [1, 2, 3, 4, 5]
 data:
-- label: freivalds
+- label: Freivalds' Algorithm
   # conf:
   #   color: red
   log_dirs: [
@@ -24,7 +24,7 @@ data:
     exp_attack_freivald_l2_512_sync_cpu_bt64_bf32_n1_p1_noise1e-2,
     exp_attack_freivald_l2_512_sync_cpu_bt64_bf32_n1_p1_noise1e-1
   ]
-- label: gvfa
+- label: GVFA
   # conf:
   #   color: orange
   log_dirs: [
@@ -34,7 +34,7 @@ data:
     exp_attack_gvfa_l2_512_sync_cpu_bt64_bf32_n1_p1_noise1e-2,
     exp_attack_gvfa_l2_512_sync_cpu_bt64_bf32_n1_p1_noise1e-1
   ]
-- label: submul
+- label: SubMul
   # conf:
   #   color: blue
   log_dirs: [

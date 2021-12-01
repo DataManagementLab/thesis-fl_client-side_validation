@@ -1,11 +1,5 @@
 # Master Thesis von Benedikt Völker
 
-# Install Module
-
-You can install the clivaFL module with pip
-
-    pip install -e .
-
 ## Setup
 
 Create a virtual python environment
@@ -19,6 +13,28 @@ Enter the virtual environment and install requirements
     pip install -r requirements.txt
 
 Now you are good to go.
+
+# Install Module
+
+You can install the clivaFL module with pip
+
+    pip install -e .
+
+# Run Small Experiments
+
+Set the settings in `experiments.yml` and run the experiment with 
+
+    python run_exp.py
+
+# Run Thesis Experiments
+
+To run the experiments, set all variables in `thesis_experiments.sh` to `true` and then run it
+
+    bash thesis_experiments.sh
+
+To create the plots from experiment logs run
+
+    bash thesis_plots.sh
 
 ## Python Profiling
 
@@ -57,7 +73,7 @@ show profiler plot
 
 1. Evaluate Approaches (Performance & Memory per layer size)
 
-## Parameters
+## Static Parameters
 
 | Parameter    | Values |
 |--------------|--------|

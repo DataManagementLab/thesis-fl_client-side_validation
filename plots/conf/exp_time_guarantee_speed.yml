@@ -11,9 +11,9 @@ ylabel: validation time / epoch (sec)
 metric: total_time_validation
 xvalues: [25, 50, 75, 90, 99]
 data:
-- label: freivalds
-  # conf:
-  #   color: red
+- label: Freivalds' Algorithm
+  conf:
+    color: C0
   log_dirs: [
     exp_time_attack_freivald_l2_512_sync_cpu_bt64_bf32_q25_noise5e-4,
     exp_time_attack_freivald_l2_512_sync_cpu_bt64_bf32_q50_noise5e-4,
@@ -30,9 +30,9 @@ data:
 #     exp_time_gvfa_l6_512_sync_cpu_bt64_bf32_n1,
 #     exp_time_gvfa_l8_512_sync_cpu_bt64_bf32_n1
 #   ]
-- label: submul
-  # conf:
-  #   color: blue
+- label: SubMul
+  conf:
+    color: C2
   log_dirs: [
     exp_time_attack_submul_l2_512_sync_cpu_bt64_bf32_q25_noise5e-4,
     exp_time_attack_submul_l2_512_sync_cpu_bt64_bf32_q50_noise5e-4,

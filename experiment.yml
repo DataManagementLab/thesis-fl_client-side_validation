@@ -24,7 +24,7 @@ loss_fn:
   type: CrossEntropyLoss
   params:
 training:
-  seed: 0
+  # seed: 0
   use_gpu: False
   n_epochs: 5 # 20
   max_buffer_len: 32
@@ -46,10 +46,10 @@ validation:
   run_validation: True
   async_validators: 0
   async_disk_queue: False
-  validation_type: extract
-  validation_method: submul # submul # gvfa # freivald # matmul
+  validation_type: extract # extract | retrain
+  validation_method: submul # submul | gvfa | freivald | matmul
   verbose: False
-  silent: True
+  silent: False
   # n_check: 1
   # guarantee: 0.99
   validation_delay: 0
