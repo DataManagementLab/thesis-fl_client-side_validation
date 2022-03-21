@@ -1,4 +1,4 @@
-# Master Thesis von Benedikt Völker
+# Master Thesis of Benedikt Völker: "Client-side Validation for Efficient Model Poisoning Detection in Federated Learning"
 
 ## Setup
 
